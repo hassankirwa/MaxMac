@@ -1,0 +1,461 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PackageCard from '../components/PackageCard.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+import Testimonials from '../components/Testimonials.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { packages as staticPackages, destOptions } from '../data/packages';
+import { getTrips } from '../lib/wte';
+
+// Headless: featured trips come from WordPress, falling back to bundled data.
+const wpPackages = await getTrips();
+const allPackages = wpPackages.length ? wpPackages : staticPackages;
+
+const searchTabs = [
+  { label: 'Safaris', exp: 'Wildlife safari' },
+  { label: 'Beach & coast', exp: 'Beach & coast' },
+  { label: 'Trekking', exp: 'Trekking' },
+  { label: 'Custom trip', exp: '' },
+];
+
+const featuredSlugs = ['great-migration-explorer', 'kilimanjaro-machame-trek', 'diani-south-coast-escape'];
+// Prefer the named featured trips, then top up to three with any others so slug drift never empties the row.
+const picked = featuredSlugs
+  .map((slug) => allPackages.find((p) => p.slug === slug))
+  .filter((p): p is (typeof allPackages)[number] => Boolean(p));
+const topUp = allPackages.filter((p) => !picked.includes(p));
+const featured = [...picked, ...topUp]
+  .slice(0, 3)
+  .map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    region: p.region,
+    tag: p.tag,
+    days: p.days,
+    rating: p.rating.toFixed(1),
+    price: `$${p.priceN.toLocaleString()}`,
+    blurb: p.blurb,
+    gradient: p.gradient,
+  }));
+
+const mobileDestinations = [
+  { name: 'Serengeti', trips: 14, gradient: ['#c98a3c', '#7a4a1e'], dest: 'Tanzania' },
+  { name: 'Zanzibar', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], dest: 'Zanzibar' },
+  { name: 'Kilimanjaro', trips: 6, gradient: ['#5b7fa6', '#2c4a63'], dest: 'Tanzania' },
+  { name: 'Diani Beach', trips: 8, gradient: ['#4a9d7a', '#256149'], dest: 'Kenyan Coast' },
+];
+
+const desktopDestinations = [
+  { name: 'Serengeti', trips: 14, gradient: ['#c98a3c', '#7a4a1e'], dest: 'Tanzania', size: '28px', span: 'grid-row: span 2;' },
+  { name: 'Zanzibar', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], dest: 'Zanzibar', size: '22px', span: '' },
+  { name: 'Kilimanjaro', trips: 6, gradient: ['#5b7fa6', '#2c4a63'], dest: 'Tanzania', size: '22px', span: '' },
+  { name: 'Kenya Coast', trips: 11, gradient: ['#4a9d7a', '#256149'], dest: 'Kenyan Coast', size: '22px', span: 'grid-column: span 2;' },
+];
+
+const values = [
+  {
+    title: 'Local experts',
+    text: 'Guides born and raised in the parks you visit — not outsourced strangers.',
+    path: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  },
+  {
+    title: 'Tailor-made',
+    text: 'Every itinerary is built around your dates, budget and travel style.',
+    path: 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  },
+  {
+    title: 'Fair & transparent',
+    text: 'Clear pricing, no hidden fees, and a share that stays in the community.',
+    path: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+  },
+  {
+    title: '24/7 on-trip support',
+    text: 'A real person on the ground, reachable any hour of your journey.',
+    path: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.7 21a2 2 0 0 1-3.4 0',
+  },
+];
+
+const testimonials = [
+  {
+    quote:
+      '"MaxMac turned a bucket-list idea into the trip of our lives. Every camp, every guide, every sunset was better than the brochure."',
+    name: 'Sarah & Tom Whitfield',
+    trip: 'Great Migration Explorer · 2025',
+    gradient: ['#c98a3c', '#7a4a1e'] as [string, string],
+  },
+  {
+    quote:
+      '"Summiting Kilimanjaro with their crew felt safe and genuinely joyful. The support on the mountain was extraordinary."',
+    name: 'Marcus Lindqvist',
+    trip: 'Machame Trek · 2025',
+    gradient: ['#5b7fa6', '#2c4a63'] as [string, string],
+  },
+  {
+    quote:
+      '"The coast extension in Diani was pure magic — barefoot luxury after the dust of the plains. We are already planning our return."',
+    name: 'Aisha Rahman',
+    trip: 'Diani & Serengeti Combo · 2024',
+    gradient: ['#3fa9c9', '#1c6f86'] as [string, string],
+  },
+];
+
+const faqs = [
+  {
+    q: 'When is the best time to see the Great Migration?',
+    a: 'The herds move year-round, but river crossings in the northern Serengeti peak between July and October. We time your trip to the action based on the season you travel.',
+  },
+  {
+    q: 'Are your safaris suitable for families with children?',
+    a: 'Absolutely. Many camps welcome children and we tailor game drives, activities and pacing to keep younger travellers engaged and comfortable.',
+  },
+  {
+    q: 'What is included in the trip price?',
+    a: 'Accommodation, park fees, a private 4x4 with guide, meals as listed and internal transfers are included. International flights and visas are quoted separately.',
+  },
+  {
+    q: 'Can I combine a safari with a beach stay?',
+    a: 'Yes — our most popular journeys pair the Serengeti or Masai Mara with Zanzibar or the Kenyan coast for the perfect balance of adventure and relaxation.',
+  },
+];
+---
+
+<Layout title="Home">
+  <div class="pb-[92px] lg:pb-0">
+    <!-- HERO -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2b4a34] via-safari-green to-[#3d6b2e] pb-20 sm:pb-28 lg:pb-32">
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(13,26,18,0.62)] via-[rgba(13,26,18,0.42)] to-[rgba(13,26,18,0.8)]"></div>
+      <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(120% 90% at 82% 6%, rgba(212,160,23,0.22), transparent 55%);"></div>
+
+      <Header variant="transparent" />
+
+      <div class="container-page relative z-10 pt-8 text-center sm:pt-10 lg:pt-6">
+        <div class="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs sm:text-[13px] font-medium text-white backdrop-blur-sm">
+          <span class="h-[7px] w-[7px] rounded-full bg-savannah-gold"></span>
+          Award-winning East African safari specialists since 2009
+        </div>
+        <h1 class="mx-auto mt-5 max-w-[900px] text-[36px] leading-[1.08] sm:text-[48px] lg:text-[64px] lg:leading-[1.05] font-bold tracking-tight text-white">
+          Your African safari, perfectly orchestrated
+        </h1>
+        <p class="mx-auto mt-4 max-w-[600px] text-[16px] sm:text-[19px] leading-relaxed text-white/80">
+          Handcrafted journeys across the Serengeti, Kilimanjaro and the Swahili coast — designed by people who call East Africa home.
+        </p>
+      </div>
+    </div>
+
+    <!-- SEARCH BAR overlay -->
+    <div class="container-page relative z-10 -mt-16 sm:-mt-14 lg:-mt-24">
+      <div class="rounded-[20px] bg-white p-2.5 shadow-[0_30px_70px_-30px_rgba(31,50,40,0.4)] sm:p-2.5" data-search-widget>
+        <div class="scroll-x-touch flex gap-1.5 overflow-x-auto px-1.5 pb-2.5 pt-1.5" data-search-tabs>
+          {searchTabs.map((tab, i) => (
+            <button
+              type="button"
+              data-tab
+              data-exp={tab.exp}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+              class:list={[
+                'whitespace-nowrap rounded-[10px] px-4 py-2.5 text-sm font-bold transition-colors',
+                i === 0 ? 'bg-safari-green text-white shadow-[0_4px_14px_-4px_rgba(31,94,59,0.6)]' : 'bg-transparent text-text-secondary hover:bg-[#F3F6F2] hover:text-safari-green',
+              ]}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div class="flex flex-col divide-y divide-border-subtle border-t border-border-subtle sm:flex-row sm:divide-x sm:divide-y-0">
+          <div class="flex-[1.4] px-5 py-3.5">
+            <label class="text-xs font-semibold uppercase tracking-wide text-safari-green" for="destination-select">Destination</label>
+            <div class="mt-1.5 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" class="flex-shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <select id="destination-select" data-destination-select class="w-full appearance-none bg-transparent text-[15px] sm:text-base font-medium text-text-primary outline-none">
+                <option value="">Any destination</option>
+                {destOptions.map((d) => <option value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+          <div class="flex-[1.3] px-5 py-3.5">
+            <div class="text-xs font-semibold uppercase tracking-wide text-safari-green">When</div>
+            <div class="mt-1.5 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" class="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <div class="flex w-full min-w-0 items-center gap-2">
+                <label for="checkin-date" data-date-field class="w-full min-w-0 cursor-pointer">
+                  <span class="sr-only">Check-in date</span>
+                  <input
+                    id="checkin-date"
+                    type="date"
+                    data-checkin
+                    value="2026-07-12"
+                    class="w-full min-w-0 cursor-pointer bg-transparent text-[14px] sm:text-[15px] font-medium text-text-primary outline-none"
+                  />
+                </label>
+                <span class="flex-shrink-0 text-text-secondary/50">&rarr;</span>
+                <label for="checkout-date" data-date-field class="w-full min-w-0 cursor-pointer">
+                  <span class="sr-only">Check-out date</span>
+                  <input
+                    id="checkout-date"
+                    type="date"
+                    data-checkout
+                    value="2026-07-19"
+                    class="w-full min-w-0 cursor-pointer bg-transparent text-[14px] sm:text-[15px] font-medium text-text-primary outline-none"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 px-5 py-3.5">
+            <div class="text-xs font-semibold uppercase tracking-wide text-safari-green">Travelers</div>
+            <div class="mt-1.5 flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" class="flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <div class="flex items-center gap-3">
+                <button type="button" data-travelers-minus aria-label="Decrease travelers" class="flex h-6 w-6 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">−</button>
+                <span data-travelers-count class="min-w-[64px] text-[15px] sm:text-base font-medium text-text-primary">2 adults</span>
+                <button type="button" data-travelers-plus aria-label="Increase travelers" class="flex h-6 w-6 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="p-2 sm:p-2">
+            <button
+              type="button"
+              data-search-submit
+              class="flex w-full items-center justify-center gap-2.5 rounded-[14px] bg-safari-green px-8 py-4 text-base font-bold text-white sm:h-full sm:w-auto sm:py-0"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- trust strip -->
+      <div class="mt-6 flex flex-col items-center gap-3 text-sm font-medium text-[#5b5647] sm:flex-row sm:justify-center sm:gap-10">
+        <span class="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#D4A017" stroke="#D4A017"><path d="m12 2 3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+          4.9/5 · 1,200+ reviews
+        </span>
+        <span class="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          No-hassle free cancellation
+        </span>
+        <span class="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          ATTA &amp; IATA accredited
+        </span>
+      </div>
+    </div>
+
+    <!-- FEATURED PACKAGES -->
+    <div class="container-page pt-16 lg:pt-[88px]">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wide text-savannah-gold">Featured journeys</div>
+          <h2 class="mt-2.5 text-[26px] sm:text-3xl lg:text-[36px] font-bold tracking-tight text-text-primary">Safaris our guests love most</h2>
+        </div>
+        <a href="/packages" class="flex items-center gap-2 text-[15px] font-semibold text-safari-green">
+          View all packages
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="mt-9 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
+        {featured.map((p) => <PackageCard {...p} />)}
+      </div>
+    </div>
+
+    <!-- DESTINATIONS -->
+    <div class="container-page pt-20 lg:pt-24">
+      <div class="text-center">
+        <div class="text-xs font-semibold uppercase tracking-wide text-savannah-gold">Where to go</div>
+        <h2 class="mt-2.5 text-[26px] sm:text-3xl lg:text-[36px] font-bold tracking-tight text-text-primary">Explore East Africa &amp; the coast</h2>
+      </div>
+
+      <!-- mobile/tablet grid -->
+      <div class="mt-8 grid grid-cols-2 gap-3 lg:hidden">
+        {mobileDestinations.map((d) => (
+          <a
+            href={`/packages?dest=${encodeURIComponent(d.dest)}`}
+            class="relative block h-[130px] overflow-hidden rounded-2xl sm:h-[160px]"
+            style={`background:linear-gradient(150deg, ${d.gradient[0]}, ${d.gradient[1]});`}
+          >
+            <div class="absolute inset-0 bg-gradient-to-t from-[rgba(15,28,20,0.6)] to-transparent"></div>
+            <div class="absolute bottom-3 left-3.5 text-white">
+              <div class="text-base font-bold">{d.name}</div>
+              <div class="text-[11px] text-white/80">{d.trips} trips</div>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <!-- desktop bento grid -->
+      <div class="mt-10 hidden gap-5 lg:grid" style="grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 200px 200px;">
+        {desktopDestinations.map((d) => (
+          <a
+            href={`/packages?dest=${encodeURIComponent(d.dest)}`}
+            class="relative block overflow-hidden rounded-card"
+            style={`${d.span} background:linear-gradient(150deg, ${d.gradient[0]}, ${d.gradient[1]});`}
+          >
+            <div class="absolute inset-0 bg-gradient-to-t from-[rgba(15,28,20,0.65)] via-[rgba(15,28,20,0.05)] to-transparent"></div>
+            <div class="absolute bottom-5 left-5 text-white">
+              <div class:list={['font-bold tracking-tight', d.size === '28px' ? 'text-[28px]' : 'text-[22px]']}>{d.name}</div>
+              <div class="mt-1 text-sm text-white/82">{d.trips} trips</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- VALUES BAND -->
+    <div class="mt-20 bg-safari-green px-5 py-14 sm:px-10 lg:mt-24 lg:px-14 lg:py-20">
+      <div class="container-page !px-0 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+        {values.map((v) => (
+          <div>
+            <div class="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-[rgba(212,160,23,0.18)]">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                {v.path.split(' M').map((seg, idx) => <path d={idx === 0 ? seg : `M${seg}`} />)}
+              </svg>
+            </div>
+            <h4 class="mt-5 mb-2 text-lg lg:text-[19px] font-bold text-white">{v.title}</h4>
+            <p class="text-sm leading-relaxed text-white/72">{v.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- TESTIMONIALS -->
+    <div class="container-page pt-20 lg:pt-24">
+      <Testimonials testimonials={testimonials} />
+    </div>
+
+    <!-- FAQ -->
+    <div class="container-page pt-20 lg:pt-24">
+      <h2 class="mb-8 text-center text-[26px] sm:text-3xl lg:text-[34px] font-bold tracking-tight text-text-primary">Frequently asked questions</h2>
+      <FaqAccordion faqs={faqs} />
+    </div>
+
+    <CtaBand
+      heading="Let's plan the safari you'll talk about forever"
+      text="Speak to a local expert. Free, no-obligation itinerary in 24 hours."
+      buttons={[
+        { label: 'Plan my safari', href: '/contact', variant: 'gold' },
+        { label: 'Browse packages', href: '/packages', variant: 'outline' },
+      ]}
+    />
+
+    <Footer />
+  </div>
+
+  <!-- sticky mobile booking bar -->
+  <div class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-[#EAE5DB] bg-white/94 px-5 py-3.5 backdrop-blur-md lg:hidden">
+    <div>
+      <div class="text-xs text-text-secondary/80">from</div>
+      <div class="text-xl font-bold leading-none text-safari-green">
+        $1,890 <span class="text-xs font-medium text-text-secondary/80">/person</span>
+      </div>
+    </div>
+    <a href="/packages" class="inline-block rounded-btn bg-safari-green px-7 py-3.5 text-[15px] font-bold text-white">Book now</a>
+  </div>
+</Layout>
+
+<script>
+  function initSearchWidget() {
+    const widget = document.querySelector('[data-search-widget]');
+    if (!widget) return;
+
+    const tabs = Array.from(widget.querySelectorAll('[data-tab]'));
+    const activeClasses = ['bg-safari-green', 'text-white', 'shadow-[0_4px_14px_-4px_rgba(31,94,59,0.6)]'];
+    const inactiveClasses = ['bg-transparent', 'text-text-secondary', 'hover:bg-[#F3F6F2]', 'hover:text-safari-green'];
+    let activeExp = tabs[0]?.getAttribute('data-exp') ?? '';
+
+    const setActiveTab = (activeTab: Element) => {
+      tabs.forEach((t) => {
+        t.classList.remove(...activeClasses, ...inactiveClasses);
+        if (t === activeTab) {
+          t.classList.add(...activeClasses);
+          t.setAttribute('aria-pressed', 'true');
+        } else {
+          t.classList.add(...inactiveClasses);
+          t.setAttribute('aria-pressed', 'false');
+        }
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        setActiveTab(tab);
+        activeExp = tab.getAttribute('data-exp') ?? '';
+      });
+    });
+
+    // date fields: enforce no past dates, keep checkout after checkin, and make the
+    // whole field (not just the browser's tiny calendar glyph) open the native picker
+    const checkinInput = widget.querySelector('[data-checkin]') as HTMLInputElement | null;
+    const checkoutInput = widget.querySelector('[data-checkout]') as HTMLInputElement | null;
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const addDays = (iso: string, days: number) => {
+      const d = new Date(iso);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+
+    if (checkinInput) {
+      checkinInput.min = todayIso;
+      if (checkinInput.value < todayIso) checkinInput.value = todayIso;
+    }
+    if (checkoutInput && checkinInput) {
+      checkoutInput.min = addDays(checkinInput.value, 1);
+      if (checkoutInput.value < checkoutInput.min) checkoutInput.value = checkoutInput.min;
+    }
+    checkinInput?.addEventListener('change', () => {
+      if (!checkoutInput || !checkinInput) return;
+      const minCheckout = addDays(checkinInput.value, 1);
+      checkoutInput.min = minCheckout;
+      if (checkoutInput.value < minCheckout) checkoutInput.value = minCheckout;
+    });
+
+    widget.querySelectorAll('[data-date-field]').forEach((field) => {
+      field.addEventListener('click', (e) => {
+        const input = field.querySelector('input') as HTMLInputElement | null;
+        if (!input) return;
+        e.preventDefault();
+        input.focus();
+        const picker = (input as HTMLInputElement & { showPicker?: () => void }).showPicker;
+        if (typeof picker === 'function') {
+          try {
+            picker.call(input);
+          } catch {
+            /* ignore unsupported/blocked showPicker calls */
+          }
+        }
+      });
+    });
+
+    let travelers = 2;
+    const travelersLabel = widget.querySelector('[data-travelers-count]');
+    const updateTravelers = () => {
+      if (travelersLabel) travelersLabel.textContent = `${travelers} adult${travelers === 1 ? '' : 's'}`;
+    };
+    widget.querySelector('[data-travelers-minus]')?.addEventListener('click', () => {
+      travelers = Math.max(1, travelers - 1);
+      updateTravelers();
+    });
+    widget.querySelector('[data-travelers-plus]')?.addEventListener('click', () => {
+      travelers = Math.min(12, travelers + 1);
+      updateTravelers();
+    });
+
+    widget.querySelector('[data-search-submit]')?.addEventListener('click', () => {
+      const dest = (widget.querySelector('[data-destination-select]') as HTMLSelectElement | null)?.value ?? '';
+      const checkin = (widget.querySelector('[data-checkin]') as HTMLInputElement | null)?.value ?? '';
+      const checkout = (widget.querySelector('[data-checkout]') as HTMLInputElement | null)?.value ?? '';
+      const params = new URLSearchParams();
+      if (activeExp) params.set('exp', activeExp);
+      if (dest) params.set('dest', dest);
+      if (checkin) params.set('checkin', checkin);
+      if (checkout) params.set('checkout', checkout);
+      params.set('adults', String(travelers));
+      window.location.href = `/packages?${params.toString()}`;
+    });
+  }
+
+  initSearchWidget();
+  document.addEventListener('astro:after-swap', initSearchWidget);
+</script>

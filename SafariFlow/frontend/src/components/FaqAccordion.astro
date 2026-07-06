@@ -1,0 +1,76 @@
+---
+interface Faq {
+  q: string;
+  a: string;
+}
+
+interface Props {
+  faqs: Faq[];
+}
+
+const { faqs } = Astro.props;
+---
+
+<div data-faq-group class="mx-auto max-w-[820px]">
+  {faqs.map((f, i) => (
+    <div class="mb-3 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_-26px_rgba(31,50,40,0.5)]">
+      <button
+        type="button"
+        data-faq-toggle
+        aria-expanded={i === 0 ? 'true' : 'false'}
+        class="flex w-full items-center justify-between gap-4 px-5 py-[18px] lg:px-6 lg:py-[22px] text-left"
+      >
+        <span class="text-[15px] lg:text-[17px] font-semibold text-text-primary">{f.q}</span>
+        <span
+          data-faq-icon
+          class:list={[
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9px] bg-[#F3F6F2] transition-transform duration-250',
+            i === 0 && 'rotate-45',
+          ]}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+      </button>
+      <div
+        data-faq-body
+        class:list={['grid transition-[grid-template-rows] duration-300 ease-out', i === 0 ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]']}
+      >
+        <div class="overflow-hidden">
+          <p class="px-5 pb-5 lg:px-6 lg:pb-6 text-sm lg:text-[15px] leading-relaxed text-text-secondary">{f.a}</p>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+<script>
+  function initFaq() {
+    document.querySelectorAll('[data-faq-group]').forEach((group) => {
+      const toggles = group.querySelectorAll('[data-faq-toggle]');
+      toggles.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const item = btn.parentElement;
+          const body = item?.querySelector('[data-faq-body]');
+          const icon = item?.querySelector('[data-faq-icon]');
+          const isOpen = btn.getAttribute('aria-expanded') === 'true';
+
+          toggles.forEach((other) => {
+            other.setAttribute('aria-expanded', 'false');
+            const otherItem = other.parentElement;
+            otherItem?.querySelector('[data-faq-body]')?.classList.replace('grid-rows-[1fr]', 'grid-rows-[0fr]');
+            otherItem?.querySelector('[data-faq-icon]')?.classList.remove('rotate-45');
+          });
+
+          if (!isOpen) {
+            btn.setAttribute('aria-expanded', 'true');
+            body?.classList.replace('grid-rows-[0fr]', 'grid-rows-[1fr]');
+            icon?.classList.add('rotate-45');
+          }
+        });
+      });
+    });
+  }
+
+  initFaq();
+  document.addEventListener('astro:after-swap', initFaq);
+</script>

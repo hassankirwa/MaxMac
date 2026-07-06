@@ -1,0 +1,74 @@
+---
+interface Testimonial {
+  quote: string;
+  name: string;
+  trip: string;
+  gradient: [string, string];
+}
+
+interface Props {
+  testimonials: Testimonial[];
+}
+
+const { testimonials } = Astro.props;
+---
+
+<div data-testimonial-group class="mx-auto max-w-[760px] text-center">
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="#D4A017" class="mx-auto"><path d="M7 7h4v6a4 4 0 0 1-4 4v-2a2 2 0 0 0 2-2H7zM15 7h4v6a4 4 0 0 1-4 4v-2a2 2 0 0 0 2-2h-2z"/></svg>
+
+  <div class="relative mt-5 min-h-[140px] sm:min-h-[100px]">
+    {testimonials.map((t, i) => (
+      <div data-testimonial-slide class:list={['transition-opacity duration-300', i === 0 ? 'opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none']}>
+        <p class="text-xl sm:text-2xl lg:text-[26px] font-medium leading-snug tracking-tight text-text-primary">{t.quote}</p>
+        <div class="mt-7 flex items-center justify-center gap-3.5">
+          <div class="h-12 w-12 rounded-full" style={`background:linear-gradient(150deg, ${t.gradient[0]}, ${t.gradient[1]});`}></div>
+          <div class="text-left">
+            <div class="text-[15px] font-bold text-text-primary">{t.name}</div>
+            <div class="text-[13px] text-text-secondary">{t.trip}</div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-7 flex justify-center gap-2">
+    {testimonials.map((_, i) => (
+      <button
+        type="button"
+        data-testimonial-dot
+        aria-label={`Show testimonial ${i + 1}`}
+        class:list={['h-[9px] rounded-full transition-all duration-250', i === 0 ? 'w-7 bg-safari-green' : 'w-[9px] bg-[#D8D2C6]']}
+      ></button>
+    ))}
+  </div>
+</div>
+
+<script>
+  function initTestimonials() {
+    document.querySelectorAll('[data-testimonial-group]').forEach((group) => {
+      const slides = Array.from(group.querySelectorAll('[data-testimonial-slide]'));
+      const dots = Array.from(group.querySelectorAll('[data-testimonial-dot]'));
+
+      const show = (idx: number) => {
+        slides.forEach((slide, i) => {
+          slide.classList.toggle('opacity-100', i === idx);
+          slide.classList.toggle('absolute', i !== idx);
+          slide.classList.toggle('inset-0', i !== idx);
+          slide.classList.toggle('opacity-0', i !== idx);
+          slide.classList.toggle('pointer-events-none', i !== idx);
+        });
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('w-7', i === idx);
+          dot.classList.toggle('bg-safari-green', i === idx);
+          dot.classList.toggle('w-[9px]', i !== idx);
+          dot.classList.toggle('bg-[#D8D2C6]', i !== idx);
+        });
+      };
+
+      dots.forEach((dot, i) => dot.addEventListener('click', () => show(i)));
+    });
+  }
+
+  initTestimonials();
+  document.addEventListener('astro:after-swap', initTestimonials);
+</script>

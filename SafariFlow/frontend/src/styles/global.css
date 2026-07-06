@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist", "Inter", system-ui, sans-serif;
+
+  --color-safari-green: #1f5e3b;
+  --color-safari-green-dark: #163f28;
+  --color-savannah-gold: #d4a017;
+  --color-warm-sand: #f8f6f2;
+  --color-surface: #ffffff;
+  --color-ink: #14231a;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-border-subtle: #f1ede5;
+  --color-border-muted: #e4ded2;
+
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --radius-input: 12px;
+  --radius-modal: 24px;
+  --radius-hero: 24px;
+}
+
+@layer base {
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: var(--color-warm-sand);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+}
+
+@layer utilities {
+  .container-page {
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 3.5rem;
+    }
+  }
+
+  .scroll-x-touch {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-x-touch::-webkit-scrollbar {
+    display: none;
+  }
+}

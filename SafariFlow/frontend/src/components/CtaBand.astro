@@ -1,0 +1,40 @@
+---
+interface Button {
+  label: string;
+  href: string;
+  variant: 'gold' | 'outline';
+}
+
+interface Props {
+  heading: string;
+  text: string;
+  buttons: Button[];
+}
+
+const { heading, text, buttons } = Astro.props;
+---
+
+<div class="container-page py-16 lg:py-24">
+  <div class="relative overflow-hidden rounded-hero bg-gradient-to-br from-safari-green to-[#2b4a34] px-6 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-[72px]">
+    <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(80% 120% at 90% 20%, rgba(212,160,23,0.32), transparent 60%);"></div>
+    <div class="relative flex flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="max-w-[560px] text-[26px] sm:text-3xl lg:text-[40px] font-bold leading-tight tracking-tight text-white">{heading}</h2>
+        <p class="mt-3.5 max-w-[520px] text-[15px] lg:text-[17px] text-white/80">{text}</p>
+      </div>
+      <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row lg:flex-col">
+        {buttons.map((btn) => (
+          <a
+            href={btn.href}
+            class:list={[
+              'whitespace-nowrap rounded-btn px-8 py-4 text-center text-base font-bold transition-transform active:scale-[0.98]',
+              btn.variant === 'gold' ? 'bg-savannah-gold text-text-primary' : 'border border-white/35 text-white',
+            ]}
+          >
+            {btn.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

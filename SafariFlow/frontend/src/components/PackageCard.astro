@@ -1,0 +1,64 @@
+---
+interface Props {
+  slug: string;
+  name: string;
+  region: string;
+  tag: string;
+  days: number;
+  rating: string;
+  price: string;
+  blurb: string;
+  gradient: [string, string];
+  ctaVariant?: 'filled' | 'tint';
+}
+
+const { slug, name, region, tag, days, rating, price, blurb, gradient, ctaVariant = 'tint' } = Astro.props;
+---
+
+<div class="overflow-hidden rounded-card border border-black/[0.04] bg-white shadow-[0_18px_40px_-28px_rgba(31,50,40,0.4)]">
+  <div
+    class="relative h-[190px] lg:h-[220px]"
+    style={`background:linear-gradient(150deg, ${gradient[0]}, ${gradient[1]});`}
+  >
+    <div class="absolute inset-0 bg-gradient-to-b from-white/5 to-[rgba(15,28,20,0.35)]"></div>
+    <div class="absolute left-3.5 top-3.5 rounded-lg bg-white/92 px-3 py-1.5 text-xs font-bold text-safari-green">{tag}</div>
+    <div class="absolute right-3.5 top-3.5 flex h-8 w-8 lg:h-[34px] lg:w-[34px] items-center justify-center rounded-full bg-white/92">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg>
+    </div>
+    <div class="absolute bottom-3 left-3.5 flex items-center gap-1.5 text-xs font-semibold text-white">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      {region}
+    </div>
+  </div>
+  <div class="p-5 lg:p-[22px]">
+    <div class="flex items-center justify-between text-xs">
+      <span class="flex items-center gap-1.5 font-medium text-text-secondary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        {days} days
+      </span>
+      <span class="flex items-center gap-1 font-bold text-text-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#D4A017" stroke="#D4A017"><path d="m12 2 3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+        {rating}
+      </span>
+    </div>
+    <h3 class="mt-2.5 mb-1.5 text-lg lg:text-[21px] font-bold leading-tight tracking-tight text-text-primary">{name}</h3>
+    <p class="min-h-[39px] text-sm leading-relaxed text-text-secondary">{blurb}</p>
+    <div class="mt-4 flex items-end justify-between border-t border-border-subtle pt-4">
+      <div>
+        <span class="text-[11px] text-text-secondary/80">from</span>
+        <div class="text-xl lg:text-2xl font-bold leading-none text-safari-green">
+          {price}<span class="text-xs font-medium text-text-secondary/80"> /person</span>
+        </div>
+      </div>
+      <a
+        href={`/packages/${slug}`}
+        class:list={[
+          'inline-block rounded-[11px] px-4 lg:px-5 py-2.5 text-sm font-bold transition-transform active:scale-[0.98]',
+          ctaVariant === 'filled' ? 'bg-safari-green text-white' : 'bg-[#F3F6F2] text-safari-green',
+        ]}
+      >
+        View trip
+      </a>
+    </div>
+  </div>
+</div>

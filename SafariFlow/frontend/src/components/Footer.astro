@@ -1,0 +1,50 @@
+---
+const exploreLinks = ['Safari packages', 'Destinations', 'Experiences', 'Gallery'];
+const companyLinks = ['About us', 'Reviews', 'Blog', 'Contact'];
+---
+
+<footer class="bg-ink px-5 pt-16 pb-10 lg:px-14 lg:pt-16">
+  <div class="container-page !px-0">
+    <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-10">
+      <div>
+        <a href="/" class="flex items-center gap-2.5 text-white">
+          <span class="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-savannah-gold">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20l3-9 4 5 3-8 4 12"/></svg>
+          </span>
+          <span class="text-[17px] font-extrabold">MAXMAC<span class="text-savannah-gold"> SAFARIS</span></span>
+        </a>
+        <p class="mt-[18px] max-w-[280px] text-sm leading-relaxed text-white/55">
+          Tailor-made safaris and coastal escapes across East Africa, run by a team who live and breathe the bush.
+        </p>
+      </div>
+
+      <div>
+        <div class="mb-3.5 text-sm font-bold text-white">Explore</div>
+        <div class="flex flex-col gap-2.5 text-sm text-white/60">
+          {exploreLinks.map((label) => <span>{label}</span>)}
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-3.5 text-sm font-bold text-white">Company</div>
+        <div class="flex flex-col gap-2.5 text-sm text-white/60">
+          {companyLinks.map((label) => <span>{label}</span>)}
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-3.5 text-sm font-bold text-white">Get in touch</div>
+        <div class="flex flex-col gap-2.5 text-sm text-white/60">
+          <span>+254 712 000 000</span>
+          <span>hello@maxmacsafaris.com</span>
+          <span>Nairobi &middot; Arusha</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-10 flex flex-col gap-3 border-t border-white/10 pt-[22px] text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+      <span>&copy; 2026 MaxMac Safaris. All rights reserved.</span>
+      <span>Privacy &middot; Terms &middot; Cookies</span>
+    </div>
+  </div>
+</footer>

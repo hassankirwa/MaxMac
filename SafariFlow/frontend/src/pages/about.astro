@@ -1,0 +1,140 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CtaBand from '../components/CtaBand.astro';
+
+const stats = [
+  { value: '15+', label: 'Years crafting safaris' },
+  { value: '4,800', label: 'Happy travellers' },
+  { value: '4.9★', label: 'Average trip rating' },
+  { value: '100%', label: 'Local guides' },
+];
+
+const values = [
+  {
+    title: 'Local at heart',
+    text: 'Every guide is born and raised in the parks they lead you through — real knowledge, real stories.',
+    path: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  },
+  {
+    title: 'Conservation first',
+    text: 'A share of every trip funds anti-poaching and community projects across East Africa.',
+    path: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+  },
+  {
+    title: 'Effortless for you',
+    text: 'We handle every permit, transfer and detail so you can simply be present in the moment.',
+    path: 'M20 6 9 17l-5-5',
+  },
+];
+
+const team = [
+  { name: 'Macharia Njoroge', role: 'Founder & Head Guide', gradient: ['#c98a3c', '#7a4a1e'], bio: 'Silver-level guide with 20 years reading the Mara and Serengeti.' },
+  { name: 'Amina Hassan', role: 'Journey Designer', gradient: ['#4a9d7a', '#256149'], bio: 'Turns bucket lists into flawless day-by-day itineraries.' },
+  { name: 'David Kiptoo', role: 'Mountain Lead', gradient: ['#5b7fa6', '#2c4a63'], bio: 'Kilimanjaro summit specialist with 300+ ascents.' },
+  { name: 'Grace Wanjiru', role: 'Guest Experience', gradient: ['#b98a52', '#5e3d1c'], bio: 'Your on-the-ground point of contact, day or night.' },
+];
+
+function splitPath(path: string) {
+  return path.split(' M').map((seg, i) => (i === 0 ? seg : `M${seg}`));
+}
+---
+
+<Layout title="About Us">
+  <Header variant="solid" />
+
+  <!-- hero -->
+  <div class="container-page pt-12 sm:pt-16 lg:pt-[72px]">
+    <div class="flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:gap-14">
+      <div class="lg:flex-1">
+        <div class="inline-flex items-center gap-2 rounded-full bg-[#F3F6F2] px-4 py-2 text-xs sm:text-[13px] font-semibold text-safari-green">
+          <span class="h-[7px] w-[7px] rounded-full bg-savannah-gold"></span>
+          Our story since 2009
+        </div>
+        <h1 class="mt-4 sm:mt-5 text-[32px] sm:text-4xl lg:text-[52px] leading-[1.08] lg:leading-[1.05] font-bold tracking-tight text-text-primary">
+          Born in the bush,<br />built for you
+        </h1>
+        <p class="mt-4 sm:mt-[18px] text-[15px] sm:text-lg leading-relaxed text-[#555]">
+          MaxMac Safaris began with two friends, one battered Land Cruiser, and a belief that the best safaris are led
+          by the people who know the land best. Fifteen years later we're a team of local guides, planners and
+          storytellers — but that belief hasn't changed.
+        </p>
+        <div class="mt-6 sm:mt-7 flex flex-col gap-3 sm:flex-row">
+          <a href="/contact" class="rounded-btn bg-safari-green px-6 py-3.5 text-center text-[15px] font-bold text-white">Meet the team</a>
+          <a href="/packages" class="rounded-btn border border-border-muted px-6 py-3.5 text-center text-[15px] font-semibold text-text-primary">Our packages</a>
+        </div>
+      </div>
+      <div class="relative h-[220px] w-full overflow-hidden rounded-hero sm:h-[320px] lg:h-[400px] lg:w-[520px] lg:flex-shrink-0" style="background:linear-gradient(150deg,#4a9d7a,#256149);">
+        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-[rgba(15,28,20,0.28)]"></div>
+        <div class="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-full bg-[rgba(13,26,18,0.5)] px-3.5 py-2 text-[13px] text-white">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+          Our guides on the Mara
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="container-page pt-14 sm:pt-16 lg:pt-[72px]">
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
+      {stats.map((s) => (
+        <div class="rounded-card bg-white p-5 lg:p-7 shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <div class="text-3xl lg:text-[44px] font-bold leading-none tracking-tight text-safari-green">{s.value}</div>
+          <div class="mt-2 lg:mt-2.5 text-sm lg:text-[15px] font-medium text-text-secondary">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- values -->
+  <div class="mt-14 sm:mt-16 lg:mt-[72px] bg-safari-green px-5 py-9 sm:px-10 sm:py-14 lg:px-14 lg:py-[72px]">
+    <div class="container-page !px-0">
+      <div class="mb-8 text-center lg:mb-11">
+        <div class="text-xs font-semibold uppercase tracking-wide text-savannah-gold">What we stand for</div>
+        <h2 class="mt-2.5 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">Safaris done the right way</h2>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-7">
+        {values.map((v) => (
+          <div class="rounded-card border border-white/10 bg-white/[0.06] p-6 lg:p-7">
+            <div class="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-[rgba(212,160,23,0.18)]">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                {splitPath(v.path).map((seg) => <path d={seg} />)}
+              </svg>
+            </div>
+            <h4 class="mt-5 mb-2 text-lg lg:text-xl font-bold text-white">{v.title}</h4>
+            <p class="text-sm leading-relaxed text-white/72">{v.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- team -->
+  <div class="container-page pt-14 sm:pt-16 lg:pt-[72px]">
+    <div class="mb-8 text-center lg:mb-11">
+      <div class="text-xs font-semibold uppercase tracking-wide text-savannah-gold">The people</div>
+      <h2 class="mt-2.5 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-text-primary">Guides, planners &amp; storytellers</h2>
+    </div>
+    <div class="grid grid-cols-2 gap-3.5 lg:grid-cols-4 lg:gap-6">
+      {team.map((m) => (
+        <div class="overflow-hidden rounded-card bg-white shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <div class="h-[140px] lg:h-[240px]" style={`background:linear-gradient(150deg, ${m.gradient[0]}, ${m.gradient[1]});`}></div>
+          <div class="p-3.5 lg:p-5">
+            <div class="text-[15px] lg:text-lg font-bold text-text-primary">{m.name}</div>
+            <div class="text-xs lg:text-[13px] font-semibold text-savannah-gold">{m.role}</div>
+            <p class="mt-3 hidden text-[13px] leading-relaxed text-[#777] lg:block">{m.bio}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <CtaBand
+    heading="Let's plan your first MaxMac adventure"
+    text="A real local expert, a free itinerary, zero obligation."
+    buttons={[{ label: 'Start planning', href: '/contact', variant: 'gold' }]}
+  />
+
+  <Footer />
+</Layout>
