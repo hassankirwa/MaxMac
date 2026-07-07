@@ -8,6 +8,7 @@ import Testimonials from '../components/Testimonials.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { packages as staticPackages, destOptions } from '../data/packages';
 import { getTrips } from '../lib/wte';
+import { formatMoney } from '../lib/money';
 
 // Headless: featured trips come from WordPress, falling back to bundled data.
 const wpPackages = await getTrips();
@@ -35,9 +36,13 @@ const featured = [...picked, ...topUp]
     tag: p.tag,
     days: p.days,
     rating: p.rating.toFixed(1),
-    price: `$${p.priceN.toLocaleString()}`,
+    price: formatMoney(p.priceN, p.currency),
+    priceAmount: p.priceN,
+    priceCurrency: p.currency,
     blurb: p.blurb,
     gradient: p.gradient,
+    image: p.imageCard || p.image || '',
+    imageAlt: p.imageAlt || '',
   }));
 
 const mobileDestinations = [
@@ -203,15 +208,36 @@ const faqs = [
               </div>
             </div>
           </div>
-          <div class="flex-1 px-5 py-3.5">
+          <div class="relative flex-1 px-5 py-3.5" data-travelers-cell>
             <div class="text-xs font-semibold uppercase tracking-wide text-safari-green">Travelers</div>
-            <div class="mt-1.5 flex items-center gap-2.5">
+            <button type="button" data-travelers-toggle aria-expanded="false" class="mt-1.5 flex w-full items-center gap-2.5 text-left">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" class="flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
-              <div class="flex items-center gap-3">
-                <button type="button" data-travelers-minus aria-label="Decrease travelers" class="flex h-6 w-6 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">−</button>
-                <span data-travelers-count class="min-w-[64px] text-[15px] sm:text-base font-medium text-text-primary">2 adults</span>
-                <button type="button" data-travelers-plus aria-label="Increase travelers" class="flex h-6 w-6 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">+</button>
-              </div>
+              <span data-travelers-count class="flex-1 text-[15px] sm:text-base font-medium text-text-primary">2 adults</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a9486" stroke-width="2.4" data-travelers-chevron class="flex-shrink-0 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <div
+              data-travelers-popover
+              class="absolute left-2 right-2 top-[calc(100%+8px)] z-30 hidden rounded-2xl border border-border-subtle bg-white p-3.5 shadow-[0_24px_60px_-24px_rgba(31,50,40,0.5)]"
+            >
+              {[
+                { key: 'adults', label: 'Adults', sub: 'Age 13+', initial: 2 },
+                { key: 'children', label: 'Children', sub: 'Age 2–12', initial: 0 },
+                { key: 'infants', label: 'Infants', sub: 'Under 2', initial: 0 },
+              ].map((row) => (
+                <div class="flex items-center justify-between py-2" data-pax-row={row.key}>
+                  <div>
+                    <div class="text-sm font-semibold text-text-primary">{row.label}</div>
+                    <div class="text-xs text-text-secondary/70">{row.sub}</div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <button type="button" data-pax-minus={row.key} aria-label={`Decrease ${row.label}`} class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-lg leading-none text-text-primary disabled:opacity-40">−</button>
+                    <span data-pax-value={row.key} class="min-w-[18px] text-center text-sm font-semibold text-text-primary">{row.initial}</span>
+                    <button type="button" data-pax-plus={row.key} aria-label={`Increase ${row.label}`} class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-lg leading-none text-text-primary">+</button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" data-travelers-done class="mt-2.5 w-full rounded-btn bg-safari-green py-2.5 text-sm font-bold text-white">Done</button>
             </div>
           </div>
           <div class="p-2 sm:p-2">
@@ -428,19 +454,65 @@ const faqs = [
       });
     });
 
-    let travelers = 2;
+    // Travelers: adults / children / infants, matching WP Travel Engine's own pricing
+    // categories. The hero only collects the party size — the trip page prices it server-side
+    // via WTE's real engine, so no rates live here.
+    const paxCounts: Record<string, number> = { adults: 2, children: 0, infants: 0 };
+    const paxLimits: Record<string, [number, number]> = { adults: [1, 12], children: [0, 12], infants: [0, 8] };
     const travelersLabel = widget.querySelector('[data-travelers-count]');
-    const updateTravelers = () => {
-      if (travelersLabel) travelersLabel.textContent = `${travelers} adult${travelers === 1 ? '' : 's'}`;
+
+    const paxSummary = (c: Record<string, number>) => {
+      const parts = [`${c.adults} adult${c.adults === 1 ? '' : 's'}`];
+      if (c.children) parts.push(`${c.children} child${c.children === 1 ? '' : 'ren'}`);
+      if (c.infants) parts.push(`${c.infants} infant${c.infants === 1 ? '' : 's'}`);
+      return parts.join(', ');
     };
-    widget.querySelector('[data-travelers-minus]')?.addEventListener('click', () => {
-      travelers = Math.max(1, travelers - 1);
-      updateTravelers();
+
+    const renderPax = () => {
+      Object.keys(paxCounts).forEach((key) => {
+        const valEl = widget.querySelector(`[data-pax-value="${key}"]`);
+        if (valEl) valEl.textContent = String(paxCounts[key]);
+        const minusBtn = widget.querySelector(`[data-pax-minus="${key}"]`) as HTMLButtonElement | null;
+        if (minusBtn) minusBtn.disabled = paxCounts[key] <= paxLimits[key][0];
+      });
+      if (travelersLabel) travelersLabel.textContent = paxSummary(paxCounts);
+    };
+
+    widget.querySelectorAll('[data-pax-minus]').forEach((btn) => {
+      const key = btn.getAttribute('data-pax-minus') as string;
+      btn.addEventListener('click', () => {
+        paxCounts[key] = Math.max(paxLimits[key][0], paxCounts[key] - 1);
+        renderPax();
+      });
     });
-    widget.querySelector('[data-travelers-plus]')?.addEventListener('click', () => {
-      travelers = Math.min(12, travelers + 1);
-      updateTravelers();
+    widget.querySelectorAll('[data-pax-plus]').forEach((btn) => {
+      const key = btn.getAttribute('data-pax-plus') as string;
+      btn.addEventListener('click', () => {
+        paxCounts[key] = Math.min(paxLimits[key][1], paxCounts[key] + 1);
+        renderPax();
+      });
     });
+
+    // popover open/close
+    const paxCell = widget.querySelector('[data-travelers-cell]');
+    const paxToggle = widget.querySelector('[data-travelers-toggle]');
+    const paxPopover = widget.querySelector('[data-travelers-popover]');
+    const paxChevron = widget.querySelector('[data-travelers-chevron]');
+    const setPaxOpen = (open: boolean) => {
+      paxPopover?.classList.toggle('hidden', !open);
+      paxToggle?.setAttribute('aria-expanded', String(open));
+      paxChevron?.classList.toggle('rotate-180', open);
+    };
+    paxToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setPaxOpen(Boolean(paxPopover?.classList.contains('hidden')));
+    });
+    widget.querySelector('[data-travelers-done]')?.addEventListener('click', () => setPaxOpen(false));
+    document.addEventListener('click', (e) => {
+      if (paxCell && !paxCell.contains(e.target as Node)) setPaxOpen(false);
+    });
+
+    renderPax();
 
     widget.querySelector('[data-search-submit]')?.addEventListener('click', () => {
       const dest = (widget.querySelector('[data-destination-select]') as HTMLSelectElement | null)?.value ?? '';
@@ -451,7 +523,21 @@ const faqs = [
       if (dest) params.set('dest', dest);
       if (checkin) params.set('checkin', checkin);
       if (checkout) params.set('checkout', checkout);
-      params.set('adults', String(travelers));
+      params.set('adults', String(paxCounts.adults));
+      if (paxCounts.children) params.set('children', String(paxCounts.children));
+      if (paxCounts.infants) params.set('infants', String(paxCounts.infants));
+
+      // Persist the party + preferred date so it rides through to the trip detail card,
+      // checkout and pricing even on direct navigation (not just via the results links).
+      try {
+        localStorage.setItem(
+          'sf_search_prefs',
+          JSON.stringify({ ...paxCounts, date: checkin, savedAt: Date.now() })
+        );
+      } catch {
+        /* storage unavailable (private mode) — URL params still carry it forward. */
+      }
+
       window.location.href = `/packages?${params.toString()}`;
     });
   }

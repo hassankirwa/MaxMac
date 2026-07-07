@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import CurrencyController from '../components/CurrencyController.astro';
 
 interface Props {
   title: string;
@@ -22,14 +23,21 @@ const {
     <title>{title} · MaxMac Safaris</title>
     <meta name="description" content={description} />
 
+    <!--
+      Inter is kept in the CSS font stack (global.css: --font-sans) purely as a fallback name —
+      it's never actually the rendered font in practice, so its weights aren't fetched here.
+      Cuts the Google Fonts request from 8 weight/family combinations down to the 5 Geist
+      weights genuinely used (font-normal/medium/semibold/bold/extrabold all appear in the UI).
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
     <slot />
+    <CurrencyController />
   </body>
 </html>

@@ -1,13 +1,22 @@
 export interface PackageItem {
   slug: string;
+  /** Real WP Travel Engine trip post ID — only present when sourced live from WP, not static fallback data. */
+  wpId?: number;
   name: string;
   region: string;
   dest: string;
   tag: string;
   days: number;
   priceN: number;
+  /** ISO 4217 code. Optional — static fallback data has no live WP currency setting; defaults to USD wherever displayed. */
+  currency?: string;
   rating: number;
   gradient: [string, string];
+  /** WordPress featured image (large size, for the trip hero). Empty/absent → gradient fallback. */
+  image?: string;
+  /** WordPress featured image (card size, for grids). Falls back to `image`, then gradient. */
+  imageCard?: string;
+  imageAlt?: string;
   blurb: string;
   exps: string[];
   chips: string[];

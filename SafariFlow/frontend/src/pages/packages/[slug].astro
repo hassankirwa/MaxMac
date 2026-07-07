@@ -6,27 +6,33 @@ import PackageCard from '../../components/PackageCard.astro';
 import FaqAccordion from '../../components/FaqAccordion.astro';
 import CtaBand from '../../components/CtaBand.astro';
 import { packages as staticPackages } from '../../data/packages';
-import { getTrips, bookUrl } from '../../lib/wte';
+import { getTrips, getTripPackages, bookUrl, wpBase } from '../../lib/wte';
+import { formatMoney } from '../../lib/money';
 
 export async function getStaticPaths() {
   const wp = await getTrips();
   const list = wp.length ? wp : staticPackages;
   const fromWp = wp.length > 0;
-  return list.map((p) => {
-    const rel = list.filter((x) => x.slug !== p.slug && x.dest === p.dest).slice(0, 3);
-    const relFallback = list.filter((x) => x.slug !== p.slug).slice(0, 3);
-    return {
-      params: { slug: p.slug },
-      props: {
-        pkg: p,
-        related: rel.length > 0 ? rel : relFallback,
-        bookHref: fromWp ? bookUrl(p.slug) : '/contact',
-      },
-    };
-  });
+  return await Promise.all(
+    list.map(async (p) => {
+      const rel = list.filter((x) => x.slug !== p.slug && x.dest === p.dest).slice(0, 3);
+      const relFallback = list.filter((x) => x.slug !== p.slug).slice(0, 3);
+      const packageOptions = fromWp && p.wpId ? await getTripPackages(p.wpId) : [];
+      return {
+        params: { slug: p.slug },
+        props: {
+          pkg: p,
+          related: rel.length > 0 ? rel : relFallback,
+          bookHref: fromWp ? bookUrl(p.slug) : '/contact',
+          packageOptions,
+        },
+      };
+    })
+  );
 }
 
-const { pkg, related, bookHref } = Astro.props;
+const { pkg, related, bookHref, packageOptions } = Astro.props;
+const hasLiveQuote = packageOptions.length > 0 && Boolean(pkg.wpId);
 
 const relatedPackages = related.map((p) => ({
   slug: p.slug,
@@ -35,9 +41,11 @@ const relatedPackages = related.map((p) => ({
   tag: p.tag,
   days: p.days,
   rating: p.rating.toFixed(1),
-  price: `$${p.priceN.toLocaleString()}`,
+  price: formatMoney(p.priceN, p.currency),
   blurb: p.blurb,
   gradient: p.gradient,
+  image: p.imageCard || p.image || '',
+  imageAlt: p.imageAlt || '',
 }));
 
 const itineraryFaqs = pkg.itinerary.map((day, i) => ({ q: `Day ${i + 1} — ${day.title}`, a: day.desc }));
@@ -60,6 +68,12 @@ const departureDates = ['Aug 12, 2026', 'Sep 3, 2026', 'Oct 8, 2026', 'Nov 2, 20
 
     <!-- hero banner -->
     <div class="relative overflow-hidden bg-gradient-to-r from-safari-green to-[#2b4a34] px-5 py-9 sm:px-10 lg:px-14 lg:py-11">
+      {pkg.image && (
+        <img src={pkg.image} alt={pkg.imageAlt || pkg.name} decoding="async" class="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+      )}
+      {pkg.image && (
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[rgba(15,40,25,0.86)] via-[rgba(15,40,25,0.6)] to-[rgba(15,40,25,0.4)]"></div>
+      )}
       <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(80% 140% at 88% 10%, rgba(212,160,23,0.28), transparent 55%);"></div>
       <div class="container-page !px-0 relative">
         <div class="flex flex-wrap items-center gap-2 text-[13px] font-medium text-white/70">
@@ -150,36 +164,88 @@ const departureDates = ['Aug 12, 2026', 'Sep 3, 2026', 'Oct 8, 2026', 'Nov 2, 20
 
       <!-- STICKY BOOKING CARD (desktop) -->
       <aside class="hidden w-[340px] flex-shrink-0 lg:block">
-        <div class="sticky top-6 rounded-card bg-white p-6 shadow-[0_20px_50px_-30px_rgba(31,50,40,0.5)]" data-booking-card>
+        <div
+          class="sticky top-6 rounded-card bg-white p-6 shadow-[0_20px_50px_-30px_rgba(31,50,40,0.5)]"
+          data-booking-card
+          data-trip-id={pkg.wpId ?? ''}
+          data-trip-slug={pkg.slug}
+          data-trip-name={pkg.name}
+        >
           <div>
             <span class="text-xs text-text-secondary/80">from</span>
             <div class="text-3xl font-bold leading-none text-safari-green">
-              ${pkg.priceN.toLocaleString()}<span class="text-sm font-medium text-text-secondary/80"> /person</span>
+              <span data-sf-amount={pkg.priceN} data-sf-currency={pkg.currency}>{formatMoney(pkg.priceN, pkg.currency)}</span><span class="text-sm font-medium text-text-secondary/80"> /person</span>
             </div>
           </div>
 
-          <div class="mt-5 border-t border-border-subtle pt-5">
-            <label class="text-xs font-semibold uppercase tracking-wide text-safari-green" for="departure-select">Departure date</label>
-            <select id="departure-select" data-departure-select class="mt-1.5 w-full rounded-input border border-border-muted bg-white px-3 py-2.5 text-sm font-medium text-text-primary outline-none">
-              {departureDates.map((d) => <option value={d}>{d}</option>)}
-            </select>
-          </div>
+          {hasLiveQuote ? (
+            <Fragment>
+              <div class="mt-5 border-t border-border-subtle pt-5">
+                <label class="text-xs font-semibold uppercase tracking-wide text-safari-green" for="package-select">Package</label>
+                <select id="package-select" data-package-select class="mt-1.5 w-full rounded-input border border-border-muted bg-white px-3 py-2.5 text-sm font-medium text-text-primary outline-none">
+                  {packageOptions.map((p) => (
+                    <option value={p.id} selected={p.isPrimary}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div class="mt-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-safari-green">Travelers</div>
-            <div class="mt-1.5 flex items-center justify-between rounded-input border border-border-muted px-3 py-2.5">
-              <button type="button" data-travelers-minus aria-label="Decrease travelers" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">−</button>
-              <span data-travelers-count class="text-sm font-medium text-text-primary">2 adults</span>
-              <button type="button" data-travelers-plus aria-label="Increase travelers" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">+</button>
-            </div>
-          </div>
+              <div class="mt-4">
+                <label class="text-xs font-semibold uppercase tracking-wide text-safari-green" for="departure-date">Departure date</label>
+                <input
+                  id="departure-date"
+                  type="date"
+                  data-departure-date
+                  class="mt-1.5 w-full rounded-input border border-border-muted bg-white px-3 py-2.5 text-sm font-medium text-text-primary outline-none"
+                />
+              </div>
 
-          <div class="mt-5 flex items-center justify-between border-t border-border-subtle pt-5">
-            <span class="text-sm font-semibold text-text-primary">Total</span>
-            <span data-total-price class="text-xl font-bold text-safari-green">${(pkg.priceN * 2).toLocaleString()}</span>
-          </div>
+              <div data-traveler-categories class="mt-4 flex flex-col gap-3"></div>
 
-          <a href={bookHref} class="mt-5 block rounded-btn bg-safari-green py-3.5 text-center text-[15px] font-bold text-white">Book this trip</a>
+              <div class="mt-5 flex items-center justify-between border-t border-border-subtle pt-5">
+                <span class="text-sm font-semibold text-text-primary">Total</span>
+                <span data-total-price class="text-xl font-bold text-safari-green">{formatMoney(pkg.priceN, pkg.currency)}</span>
+              </div>
+              <p data-partial-note class="mt-2 hidden text-xs font-medium text-savannah-gold"></p>
+              <p data-sf-currency-note class="mt-2 hidden text-xs text-text-secondary/80"></p>
+              <p data-quote-error class="mt-2 hidden text-xs font-medium text-red-600"></p>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <div class="mt-5 border-t border-border-subtle pt-5">
+                <label class="text-xs font-semibold uppercase tracking-wide text-safari-green" for="departure-select">Departure date</label>
+                <select id="departure-select" data-departure-select class="mt-1.5 w-full rounded-input border border-border-muted bg-white px-3 py-2.5 text-sm font-medium text-text-primary outline-none">
+                  {departureDates.map((d) => <option value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div class="mt-4">
+                <div class="text-xs font-semibold uppercase tracking-wide text-safari-green">Travelers</div>
+                <div class="mt-1.5 flex items-center justify-between rounded-input border border-border-muted px-3 py-2.5">
+                  <button type="button" data-travelers-minus aria-label="Decrease travelers" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">−</button>
+                  <span data-travelers-count class="text-sm font-medium text-text-primary">2 adults</span>
+                  <button type="button" data-travelers-plus aria-label="Increase travelers" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">+</button>
+                </div>
+              </div>
+
+              <div class="mt-5 flex items-center justify-between border-t border-border-subtle pt-5">
+                <span class="text-sm font-semibold text-text-primary">Total</span>
+                <span data-total-price class="text-xl font-bold text-safari-green">{formatMoney(pkg.priceN * 2, pkg.currency)}</span>
+              </div>
+              <p data-sf-currency-note class="mt-2 hidden text-xs text-text-secondary/80"></p>
+            </Fragment>
+          )}
+
+          {hasLiveQuote ? (
+            <button
+              type="button"
+              data-add-to-cart
+              class="mt-5 block w-full rounded-btn bg-safari-green py-3.5 text-center text-[15px] font-bold text-white"
+            >
+              Book this trip
+            </button>
+          ) : (
+            <a href={bookHref} class="mt-5 block rounded-btn bg-safari-green py-3.5 text-center text-[15px] font-bold text-white">Book this trip</a>
+          )}
           <p class="mt-3 text-center text-xs text-text-secondary/70">Free cancellation up to 30 days before departure</p>
         </div>
       </aside>
@@ -207,15 +273,43 @@ const departureDates = ['Aug 12, 2026', 'Sep 3, 2026', 'Oct 8, 2026', 'Nov 2, 20
     <div>
       <div class="text-xs text-text-secondary/80">from</div>
       <div class="text-xl font-bold leading-none text-safari-green">
-        ${pkg.priceN.toLocaleString()} <span class="text-xs font-medium text-text-secondary/80">/person</span>
+        <span data-sf-amount={pkg.priceN} data-sf-currency={pkg.currency}>{formatMoney(pkg.priceN, pkg.currency)}</span> <span class="text-xs font-medium text-text-secondary/80">/person</span>
       </div>
     </div>
-    <a href={bookHref} class="inline-block rounded-btn bg-safari-green px-7 py-3.5 text-[15px] font-bold text-white">Book now</a>
+    {hasLiveQuote ? (
+      <button type="button" data-add-to-cart class="inline-block rounded-btn bg-safari-green px-7 py-3.5 text-[15px] font-bold text-white">Book now</button>
+    ) : (
+      <a href={bookHref} class="inline-block rounded-btn bg-safari-green px-7 py-3.5 text-[15px] font-bold text-white">Book now</a>
+    )}
   </div>
 </Layout>
 
-<script define:vars={{ priceN: pkg.priceN }}>
-  function initBookingCard() {
+<script
+  define:vars={{
+    priceN: pkg.priceN,
+    currency: pkg.currency || 'USD',
+    hasLiveQuote,
+    packageOptions,
+    wpTripId: pkg.wpId ?? null,
+    quoteUrl: hasLiveQuote ? `${wpBase}/wp-json/safariflow/v1/quote` : null,
+  }}
+>
+  // define:vars scripts are always inlined by Astro (no bundling), so this can't import
+  // src/lib/money.ts — small inline equivalent instead. Converts base-currency amounts to the
+  // visitor's display currency once the currency runtime is ready (via window.__sfFormat).
+  function formatMoney(amount, curr) {
+    const w = window;
+    if (w.__sfCurrency?.ready && w.__sfFormat && w.__sfCurrency.base === curr) {
+      return w.__sfFormat(amount);
+    }
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr, maximumFractionDigits: 0 }).format(amount);
+    } catch {
+      return `${curr} ${Math.round(amount).toLocaleString()}`;
+    }
+  }
+
+  function initStaticBookingCard() {
     const card = document.querySelector('[data-booking-card]');
     if (!card) return;
     let travelers = 2;
@@ -223,8 +317,10 @@ const departureDates = ['Aug 12, 2026', 'Sep 3, 2026', 'Oct 8, 2026', 'Nov 2, 20
     const total = card.querySelector('[data-total-price]');
     const update = () => {
       if (label) label.textContent = `${travelers} adult${travelers === 1 ? '' : 's'}`;
-      if (total) total.textContent = `$${(priceN * travelers).toLocaleString()}`;
+      if (total) total.textContent = formatMoney(priceN * travelers, currency);
     };
+    // Let a currency switch repaint the total without re-attaching listeners / resetting count.
+    window.__sfRepaintBooking = update;
     card.querySelector('[data-travelers-minus]')?.addEventListener('click', () => {
       travelers = Math.max(1, travelers - 1);
       update();
@@ -234,6 +330,284 @@ const departureDates = ['Aug 12, 2026', 'Sep 3, 2026', 'Oct 8, 2026', 'Nov 2, 20
       update();
     });
   }
+
+  function initLiveBookingCard() {
+    const card = document.querySelector('[data-booking-card]');
+    if (!card) return;
+
+    const packageSelect = card.querySelector('[data-package-select]');
+    const dateInput = card.querySelector('[data-departure-date]');
+    const categoriesEl = card.querySelector('[data-traveler-categories]');
+    const totalEl = card.querySelector('[data-total-price]');
+    const partialNoteEl = card.querySelector('[data-partial-note]');
+    const errorEl = card.querySelector('[data-quote-error]');
+
+    // Repaint the last-priced total/deposit in the new display currency when the visitor
+    // switches currency — reformats the cached base-currency quote, no network round-trip.
+    window.__sfRepaintBooking = () => {
+      const q = window.__sfLastQuote;
+      if (!q || !totalEl) return;
+      totalEl.textContent = formatMoney(Number(q.total), q.currency || currency);
+      if (partialNoteEl && q.partialPayment?.available && q.partialPayment.type === 'amount') {
+        partialNoteEl.textContent = `Deposit option available: ${formatMoney(Number(q.partialPayment.amount), q.currency || currency)} now, remainder before departure.`;
+      }
+    };
+
+    // Default departure date: two weeks out, never before today.
+    const today = new Date().toISOString().slice(0, 10);
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 14);
+    if (dateInput) {
+      dateInput.min = today;
+      dateInput.value = defaultDate.toISOString().slice(0, 10);
+    }
+
+    // Seed from the homepage search (?adults=&children=&infants=&date=). Traveler counts map
+    // onto WTE's real per-package categories by label, so whatever this trip actually defines
+    // (Adult/Child/Infant, or a subset) is what gets filled — then priced by /quote.
+    const url = new URLSearchParams(window.location.search);
+    const paxSeed = {
+      adults: url.has('adults') ? Math.max(0, parseInt(url.get('adults'), 10) || 0) : null,
+      children: url.has('children') ? Math.max(0, parseInt(url.get('children'), 10) || 0) : null,
+      infants: url.has('infants') ? Math.max(0, parseInt(url.get('infants'), 10) || 0) : null,
+    };
+    let seedDate = url.get('date');
+
+    // No URL params (e.g. arrived here directly)? Fall back to the party/date the visitor
+    // last chose in the homepage search, persisted in localStorage.
+    let hasPaxSeed = paxSeed.adults !== null || paxSeed.children !== null || paxSeed.infants !== null;
+    if (!hasPaxSeed) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('sf_search_prefs') || 'null');
+        if (stored) {
+          paxSeed.adults = Number.isFinite(stored.adults) ? stored.adults : null;
+          paxSeed.children = Number.isFinite(stored.children) ? stored.children : null;
+          paxSeed.infants = Number.isFinite(stored.infants) ? stored.infants : null;
+          hasPaxSeed = paxSeed.adults !== null || paxSeed.children !== null || paxSeed.infants !== null;
+          if (!seedDate && stored.date) seedDate = stored.date;
+        }
+      } catch {
+        /* ignore malformed/absent storage */
+      }
+    }
+
+    function paxBucket(label) {
+      const l = (label || '').toLowerCase();
+      if (l.includes('infant')) return 'infants';
+      if (l.includes('child') || l.includes('kid')) return 'children';
+      if (l.includes('adult')) return 'adults';
+      return null;
+    }
+
+    if (dateInput && seedDate && /^\d{4}-\d{2}-\d{2}$/.test(seedDate) && seedDate >= today) {
+      dateInput.value = seedDate;
+    }
+
+    let travelerCounts = {};
+
+    function currentPackage() {
+      const id = Number(packageSelect?.value);
+      return packageOptions.find((p) => p.id === id) ?? packageOptions[0];
+    }
+
+    function renderTravelerCategories() {
+      const pkgOption = currentPackage();
+      if (!categoriesEl || !pkgOption) return;
+
+      // Seed counts from the homepage search when present; otherwise default to 2 in the
+      // primary category. If the seed maps to nobody (e.g. a search for infants only on a
+      // trip with no infant category), fall back to the default so the quote stays valid.
+      travelerCounts = {};
+      let seededTotal = 0;
+      if (hasPaxSeed) {
+        pkgOption.travelerCategories.forEach((cat) => {
+          const bucket = paxBucket(cat.label);
+          const v = bucket && paxSeed[bucket] != null ? paxSeed[bucket] : 0;
+          travelerCounts[cat.id] = v;
+          seededTotal += v;
+        });
+      }
+      if (!hasPaxSeed || seededTotal === 0) {
+        pkgOption.travelerCategories.forEach((cat, i) => {
+          travelerCounts[cat.id] = i === 0 ? 2 : 0;
+        });
+      }
+
+      categoriesEl.innerHTML = pkgOption.travelerCategories
+        .map((cat) => {
+          const price = cat.hasSale && cat.salePrice ? cat.salePrice : cat.price;
+          return `
+            <div class="flex items-center justify-between rounded-input border border-border-muted px-3 py-2.5" data-cat-row="${cat.id}">
+              <div>
+                <div class="text-sm font-medium text-text-primary">${cat.label}</div>
+                <div class="text-xs text-text-secondary/70">${formatMoney(price, currency)}/person</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" data-cat-minus="${cat.id}" aria-label="Decrease ${cat.label}" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">−</button>
+                <span data-cat-count="${cat.id}" class="min-w-[16px] text-center text-sm font-medium text-text-primary">${travelerCounts[cat.id]}</span>
+                <button type="button" data-cat-plus="${cat.id}" aria-label="Increase ${cat.label}" class="flex h-7 w-7 items-center justify-center rounded-md bg-[#F3F1EB] text-text-primary">+</button>
+              </div>
+            </div>`;
+        })
+        .join('');
+
+      categoriesEl.querySelectorAll('[data-cat-minus]').forEach((btn) => {
+        const id = btn.getAttribute('data-cat-minus');
+        btn.addEventListener('click', () => {
+          travelerCounts[id] = Math.max(0, (travelerCounts[id] ?? 0) - 1);
+          categoriesEl.querySelector(`[data-cat-count="${id}"]`).textContent = String(travelerCounts[id]);
+          requestQuote();
+        });
+      });
+      categoriesEl.querySelectorAll('[data-cat-plus]').forEach((btn) => {
+        const id = btn.getAttribute('data-cat-plus');
+        btn.addEventListener('click', () => {
+          travelerCounts[id] = Math.min(12, (travelerCounts[id] ?? 0) + 1);
+          categoriesEl.querySelector(`[data-cat-count="${id}"]`).textContent = String(travelerCounts[id]);
+          requestQuote();
+        });
+      });
+    }
+
+    let requestSeq = 0;
+    let debounceTimer;
+    // Traveler +/- clicks and package/date changes can fire in quick succession (e.g. holding
+    // the + button) — debounce so each keystroke/click doesn't cost its own round trip to WP.
+    function requestQuote() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fetchQuote, 250);
+    }
+
+    async function fetchQuote() {
+      const pkgOption = currentPackage();
+      if (!pkgOption) return;
+
+      const seq = ++requestSeq;
+      errorEl?.classList.add('hidden');
+
+      try {
+        const res = await fetch(quoteUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tripId: wpTripId,
+            packageId: pkgOption.id,
+            travelers: travelerCounts,
+            tripDate: dateInput?.value ?? '',
+          }),
+        });
+        const data = await res.json();
+        if (seq !== requestSeq) return; // a newer request has since superseded this one
+
+        if (!res.ok || data.code) {
+          throw new Error(data.message ?? 'Could not price this selection.');
+        }
+
+        if (totalEl) totalEl.textContent = formatMoney(Number(data.total), data.currency || currency);
+
+        if (partialNoteEl) {
+          if (data.partialPayment?.available) {
+            partialNoteEl.textContent =
+              data.partialPayment.type === 'amount'
+                ? `Deposit option available: ${formatMoney(Number(data.partialPayment.amount), data.currency || currency)} now, remainder before departure.`
+                : 'A deposit option is available for this trip.';
+            partialNoteEl.classList.remove('hidden');
+          } else {
+            partialNoteEl.classList.add('hidden');
+          }
+        }
+
+        // Snapshot the latest priced selection so "Book this trip" can save it to the
+        // client-side cart without re-fetching — read by a separate module script below
+        // (this script uses define:vars, which Astro always treats as inline, so it can't
+        // itself `import` from src/lib/cart.ts).
+        window.__sfLastQuote = {
+          packageId: pkgOption.id,
+          packageName: pkgOption.name,
+          tripDate: dateInput?.value ?? '',
+          travelers: pkgOption.travelerCategories
+            .filter((cat) => (travelerCounts[cat.id] ?? 0) > 0)
+            .map((cat) => ({
+              categoryId: cat.id,
+              label: cat.label,
+              count: travelerCounts[cat.id],
+              pricePerPerson: cat.hasSale && cat.salePrice ? cat.salePrice : cat.price,
+            })),
+          total: Number(data.total),
+          currency: data.currency,
+          partialPayment: data.partialPayment,
+        };
+      } catch (err) {
+        if (seq !== requestSeq) return;
+        if (errorEl) {
+          errorEl.textContent = err instanceof Error ? err.message : 'Could not price this selection.';
+          errorEl.classList.remove('hidden');
+        }
+      }
+    }
+
+    packageSelect?.addEventListener('change', () => {
+      renderTravelerCategories();
+      requestQuote();
+    });
+    dateInput?.addEventListener('change', requestQuote);
+
+    renderTravelerCategories();
+    requestQuote();
+  }
+
+  function initBookingCard() {
+    if (hasLiveQuote) {
+      initLiveBookingCard();
+    } else {
+      initStaticBookingCard();
+    }
+  }
+
   initBookingCard();
   document.addEventListener('astro:after-swap', initBookingCard);
+  window.addEventListener('sf-currency-changed', () => window.__sfRepaintBooking?.());
+</script>
+
+<script>
+  // Separate, non-`define:vars` script so it can use real ES module imports (Astro always
+  // treats `define:vars` scripts as inline, which blocks bundling/imports).
+  import { saveCartSelection, type CartSelection } from '../../lib/cart';
+
+  function initAddToCart() {
+    const card = document.querySelector('[data-booking-card]');
+    if (!card) return;
+
+    const tripId = Number(card.getAttribute('data-trip-id'));
+    const tripSlug = card.getAttribute('data-trip-slug') ?? '';
+    const tripName = card.getAttribute('data-trip-name') ?? '';
+    if (!tripId) return;
+
+    document.querySelectorAll('[data-add-to-cart]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const quote = (window as any).__sfLastQuote;
+        if (!quote) return;
+
+        const selection: CartSelection = {
+          tripId,
+          tripSlug,
+          tripName,
+          packageId: quote.packageId,
+          packageName: quote.packageName,
+          tripDate: quote.tripDate,
+          travelers: quote.travelers,
+          total: quote.total,
+          currency: quote.currency,
+          partialPayment: quote.partialPayment,
+          savedAt: Date.now(),
+        };
+
+        saveCartSelection(selection);
+        window.location.href = '/cart';
+      });
+    });
+  }
+
+  initAddToCart();
+  document.addEventListener('astro:after-swap', initAddToCart);
 </script>

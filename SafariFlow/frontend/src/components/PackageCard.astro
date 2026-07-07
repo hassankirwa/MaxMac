@@ -7,19 +7,29 @@ interface Props {
   days: number;
   rating: string;
   price: string;
+  /** Raw price in the catalog base currency, so the client can convert it for display. */
+  priceAmount?: number;
+  priceCurrency?: string;
   blurb: string;
   gradient: [string, string];
-  ctaVariant?: 'filled' | 'tint';
+  image?: string;
+  imageAlt?: string;
 }
 
-const { slug, name, region, tag, days, rating, price, blurb, gradient, ctaVariant = 'tint' } = Astro.props;
+const { slug, name, region, tag, days, rating, price, priceAmount, priceCurrency, blurb, gradient, image, imageAlt } = Astro.props;
 ---
 
-<div class="overflow-hidden rounded-card border border-black/[0.04] bg-white shadow-[0_18px_40px_-28px_rgba(31,50,40,0.4)]">
+<a
+  href={`/packages/${slug}`}
+  class="group block overflow-hidden rounded-card border border-black/[0.04] bg-white shadow-[0_18px_40px_-28px_rgba(31,50,40,0.4)] transition-shadow hover:shadow-[0_22px_48px_-24px_rgba(31,50,40,0.5)]"
+>
   <div
     class="relative h-[190px] lg:h-[220px]"
     style={`background:linear-gradient(150deg, ${gradient[0]}, ${gradient[1]});`}
   >
+    {image && (
+      <img src={image} alt={imageAlt || name} loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover" />
+    )}
     <div class="absolute inset-0 bg-gradient-to-b from-white/5 to-[rgba(15,28,20,0.35)]"></div>
     <div class="absolute left-3.5 top-3.5 rounded-lg bg-white/92 px-3 py-1.5 text-xs font-bold text-safari-green">{tag}</div>
     <div class="absolute right-3.5 top-3.5 flex h-8 w-8 lg:h-[34px] lg:w-[34px] items-center justify-center rounded-full bg-white/92">
@@ -43,22 +53,18 @@ const { slug, name, region, tag, days, rating, price, blurb, gradient, ctaVarian
     </div>
     <h3 class="mt-2.5 mb-1.5 text-lg lg:text-[21px] font-bold leading-tight tracking-tight text-text-primary">{name}</h3>
     <p class="min-h-[39px] text-sm leading-relaxed text-text-secondary">{blurb}</p>
-    <div class="mt-4 flex items-end justify-between border-t border-border-subtle pt-4">
-      <div>
+    <div class="mt-4 flex items-end justify-between gap-3 border-t border-border-subtle pt-4">
+      <div class="min-w-0">
         <span class="text-[11px] text-text-secondary/80">from</span>
-        <div class="text-xl lg:text-2xl font-bold leading-none text-safari-green">
-          {price}<span class="text-xs font-medium text-text-secondary/80"> /person</span>
+        <div class="text-xl lg:text-2xl font-bold leading-tight text-safari-green">
+          <span data-sf-amount={priceAmount} data-sf-currency={priceCurrency}>{price}</span><span class="text-xs font-medium text-text-secondary/80"> /person</span>
         </div>
       </div>
-      <a
-        href={`/packages/${slug}`}
-        class:list={[
-          'inline-block rounded-[11px] px-4 lg:px-5 py-2.5 text-sm font-bold transition-transform active:scale-[0.98]',
-          ctaVariant === 'filled' ? 'bg-safari-green text-white' : 'bg-[#F3F6F2] text-safari-green',
-        ]}
+      <span
+        class="inline-block flex-shrink-0 whitespace-nowrap rounded-[11px] bg-safari-green px-4 lg:px-5 py-2.5 text-sm font-bold text-white transition-transform group-hover:brightness-105 group-active:scale-[0.98]"
       >
         View trip
-      </a>
+      </span>
     </div>
   </div>
-</div>
+</a>

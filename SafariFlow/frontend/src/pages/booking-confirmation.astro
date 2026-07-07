@@ -1,0 +1,104 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Booking Confirmation">
+  <Header variant="solid" />
+
+  <div class="container-page py-16 lg:py-24">
+    <div class="mx-auto max-w-xl">
+      <!-- loading -->
+      <div data-state-loading class="rounded-card bg-white p-10 text-center shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+        <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border-muted border-t-safari-green"></div>
+        <p class="mt-4 text-sm text-text-secondary">Checking your booking&hellip;</p>
+      </div>
+
+      <!-- success / pending -->
+      <div data-state-found class="hidden rounded-card bg-white p-8 lg:p-10 text-center shadow-[0_20px_50px_-30px_rgba(31,50,40,0.5)]">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F3F6F2]">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h1 class="mt-6 text-2xl font-bold tracking-tight text-text-primary">Booking received</h1>
+        <p data-status-note class="mt-2 text-sm text-text-secondary"></p>
+
+        <div class="mt-8 flex flex-col gap-3 rounded-input bg-warm-sand p-5 text-left">
+          <div class="flex items-center justify-between text-sm"><span class="text-text-secondary">Trip</span><span data-trip-title class="font-semibold text-text-primary"></span></div>
+          <div class="flex items-center justify-between text-sm"><span class="text-text-secondary">Date</span><span data-trip-date class="font-semibold text-text-primary"></span></div>
+          <div class="flex items-center justify-between text-sm"><span class="text-text-secondary">Lead traveler</span><span data-lead-name class="font-semibold text-text-primary"></span></div>
+          <div class="flex items-center justify-between border-t border-border-muted pt-3 text-sm"><span class="font-semibold text-text-primary">Amount</span><span data-amount class="text-lg font-bold text-safari-green"></span></div>
+        </div>
+
+        <a href="/" class="mt-8 inline-block rounded-btn bg-safari-green px-6 py-3 text-sm font-bold text-white">Back to home</a>
+      </div>
+
+      <!-- not found / error -->
+      <div data-state-error class="hidden rounded-card bg-white p-10 text-center shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+        <div class="text-lg font-semibold text-text-primary">We couldn't find that booking</div>
+        <p class="mt-2 text-sm text-text-secondary">If you completed a payment, check your email for confirmation, or contact us and we'll sort it out.</p>
+        <a href="/contact" class="mt-6 inline-block rounded-btn bg-safari-green px-6 py-3 text-sm font-bold text-white">Contact us</a>
+      </div>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { wpBase } from '../lib/wte';
+  // Receipt: show the amount actually charged, in the real currency it was charged in
+  // (base, e.g. KES) — never the indicative display currency. So use the non-converting formatter.
+  import { formatCurrency } from '../lib/money';
+
+  const STATUS_LABELS: Record<string, string> = {
+    paid: "You're all set — payment confirmed.",
+    pending: 'Payment is being confirmed. This can take a moment.',
+    partial: 'Deposit received — remainder due before departure.',
+    failed: 'Payment did not go through. Please try again or contact us.',
+  };
+
+  async function initConfirmation() {
+    const params = new URLSearchParams(window.location.search);
+    const paymentKey = params.get('payment_key');
+
+    const loading = document.querySelector('[data-state-loading]');
+    const found = document.querySelector('[data-state-found]');
+    const error = document.querySelector('[data-state-error]');
+
+    const showError = () => {
+      loading?.classList.add('hidden');
+      found?.classList.add('hidden');
+      error?.classList.remove('hidden');
+    };
+
+    if (!paymentKey) {
+      showError();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${wpBase}/wp-json/safariflow/v1/bookings/${encodeURIComponent(paymentKey)}`);
+      if (!res.ok) {
+        showError();
+        return;
+      }
+      const data = await res.json();
+
+      loading?.classList.add('hidden');
+      found?.classList.remove('hidden');
+
+      document.querySelector('[data-status-note]')!.textContent = STATUS_LABELS[data.status] ?? 'Thanks — we have your booking.';
+      document.querySelector('[data-trip-title]')!.textContent = data.tripTitle ?? '—';
+      const d = data.tripDate ? new Date(data.tripDate) : null;
+      document.querySelector('[data-trip-date]')!.textContent = d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+      document.querySelector('[data-lead-name]')!.textContent = data.leadName ?? '—';
+      document.querySelector('[data-amount]')!.textContent = formatCurrency(Number(data.amount ?? 0), data.currency ?? 'USD');
+    } catch {
+      showError();
+    }
+  }
+
+  initConfirmation();
+  document.addEventListener('astro:after-swap', initConfirmation);
+</script>

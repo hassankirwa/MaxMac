@@ -1,0 +1,23 @@
+---
+/**
+ * Global currency runtime bootstrap. Included once in Layout so every page detects the
+ * visitor's currency, converts displayed prices, and wires up any currency switcher.
+ * Renders no markup — the switcher UI lives in Header; static prices carry data-sf-amount.
+ */
+---
+
+<script>
+  import { initCurrency, applyAll, CURRENCY_EVENT } from '../lib/currency';
+
+  function boot() {
+    // Re-apply immediately with whatever state exists (e.g. after a view transition swaps in
+    // fresh server-rendered base prices), then (re-)detect asynchronously.
+    applyAll();
+    void initCurrency();
+  }
+
+  boot();
+  document.addEventListener('astro:after-swap', boot);
+  // Keep static prices in sync when the switcher changes currency on another script's turn.
+  window.addEventListener(CURRENCY_EVENT, () => applyAll());
+</script>

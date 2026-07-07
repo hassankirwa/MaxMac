@@ -40,6 +40,14 @@ add_filter(
 		$data['sf_rating'] = (float) ( get_post_meta( $post->ID, '_sf_rating', true ) ?: 0 );
 		$data['sf_tag']    = (string) get_post_meta( $post->ID, '_sf_tag', true );
 
+		// Featured image URLs at two sizes so the headless catalog renders real photos
+		// (card grids + trip hero) instead of gradient placeholders. Empty string when a
+		// trip has no featured image, so the frontend can fall back to its gradient.
+		$thumb_id              = get_post_thumbnail_id( $post->ID );
+		$data['sf_image']      = $thumb_id ? ( wp_get_attachment_image_url( $thumb_id, 'large' ) ?: '' ) : '';
+		$data['sf_image_card'] = $thumb_id ? ( wp_get_attachment_image_url( $thumb_id, 'medium_large' ) ?: '' ) : '';
+		$data['sf_image_alt']  = $thumb_id ? (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) : '';
+
 		$response->set_data( $data );
 
 		return $response;

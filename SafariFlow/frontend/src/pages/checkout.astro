@@ -1,0 +1,265 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Checkout">
+  <Header variant="solid" />
+
+  <div class="container-page py-12 lg:py-16">
+    <h1 class="text-3xl lg:text-4xl font-bold tracking-tight text-text-primary">Checkout</h1>
+    <p class="mt-2 text-[15px] text-text-secondary">A few details and you're set.</p>
+
+    <!-- empty state -->
+    <div data-checkout-empty class="hidden mt-8 max-w-2xl rounded-card bg-white p-10 text-center shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+      <div class="text-lg font-semibold text-text-primary">No trip selected yet</div>
+      <p class="mt-2 text-sm text-text-secondary">Head back to your cart or browse packages to get started.</p>
+      <a href="/packages" class="mt-6 inline-block rounded-btn bg-safari-green px-6 py-3 text-sm font-bold text-white">Browse packages</a>
+    </div>
+
+    <div data-checkout-content class="hidden mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
+      <!-- FORM -->
+      <form data-checkout-form class="min-w-0 flex-1 flex flex-col gap-8">
+        <section class="rounded-card bg-white p-6 shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <h2 class="text-lg font-bold text-text-primary">Billing details</h2>
+          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input name="billing_fname" required placeholder="First name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="billing_lname" required placeholder="Last name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="billing_email" type="email" required placeholder="Email" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="billing_phone" required placeholder="Phone" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="billing_address" required placeholder="Address" class="sm:col-span-2 rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="billing_city" required placeholder="City" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <select name="billing_country" required data-country-select class="rounded-input border border-border-muted bg-white px-3.5 py-2.5 text-sm outline-none focus:border-safari-green">
+              <option value="">Country&hellip;</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="rounded-card bg-white p-6 shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <h2 class="text-lg font-bold text-text-primary">Traveler details</h2>
+          <div data-travelers-fields class="mt-4 flex flex-col gap-6"></div>
+        </section>
+
+        <section class="rounded-card bg-white p-6 shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <h2 class="text-lg font-bold text-text-primary">Emergency contact</h2>
+          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input name="emergency_fname" required placeholder="First name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="emergency_lname" required placeholder="Last name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="emergency_phone" required placeholder="Phone" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <input name="emergency_relation" required placeholder="Relationship (e.g. Spouse)" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+            <select name="emergency_country" required data-country-select class="sm:col-span-2 rounded-input border border-border-muted bg-white px-3.5 py-2.5 text-sm outline-none focus:border-safari-green">
+              <option value="">Country&hellip;</option>
+            </select>
+          </div>
+        </section>
+
+        <section data-payment-mode-section class="hidden rounded-card bg-white p-6 shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+          <h2 class="text-lg font-bold text-text-primary">Payment</h2>
+          <div class="mt-4 flex flex-col gap-3">
+            <label class="flex items-center gap-3 rounded-input border border-border-muted px-4 py-3 cursor-pointer">
+              <input type="radio" name="paymentMode" value="full_payment" checked class="accent-safari-green" />
+              <span class="text-sm font-medium text-text-primary">Pay in full now</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-input border border-border-muted px-4 py-3 cursor-pointer">
+              <input type="radio" name="paymentMode" value="partial" class="accent-safari-green" />
+              <span data-partial-label class="text-sm font-medium text-text-primary">Pay a deposit now</span>
+            </label>
+          </div>
+        </section>
+
+        <p data-checkout-error class="hidden rounded-input bg-red-50 px-4 py-3 text-sm font-medium text-red-600"></p>
+
+        <button type="submit" data-checkout-submit class="rounded-btn bg-safari-green py-4 text-center text-base font-bold text-white disabled:opacity-60">
+          Continue to payment
+        </button>
+      </form>
+
+      <!-- TRIP SUMMARY -->
+      <aside class="w-full lg:w-[340px] lg:flex-shrink-0">
+        <div class="sticky top-6 rounded-card bg-white p-6 shadow-[0_20px_50px_-30px_rgba(31,50,40,0.5)]">
+          <div data-summary-trip-name class="text-lg font-bold text-text-primary"></div>
+          <div data-summary-package-name class="mt-1 text-sm font-semibold text-savannah-gold"></div>
+          <div class="mt-4 flex items-center gap-2 border-t border-border-subtle pt-4 text-sm text-text-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F5E3B" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span data-summary-date></span>
+          </div>
+          <div data-summary-travelers class="mt-4 flex flex-col gap-2"></div>
+          <div class="mt-5 flex items-center justify-between border-t border-border-subtle pt-5">
+            <span class="text-base font-semibold text-text-primary">Total</span>
+            <span data-summary-total class="text-2xl font-bold text-safari-green"></span>
+          </div>
+          <p data-sf-currency-note class="mt-2 hidden text-xs text-text-secondary/80"></p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { getCartSelection, clearCartSelection } from '../lib/cart';
+  import { getCountries, submitCheckout, CheckoutError, travelersToPricingMap } from '../lib/checkout';
+  import type { TravellerDetails } from '../lib/checkout';
+  import { formatMoney } from '../lib/money';
+
+  /** Traveler summary row markup — shared by first render and currency-change repaints. */
+  function travelerRow(label: string, count: number, amountBase: number, currency: string) {
+    return `<div class="flex items-center justify-between text-sm"><span class="text-text-secondary">${label} &times; ${count}</span><span class="font-medium text-text-primary">${formatMoney(amountBase, currency)}</span></div>`;
+  }
+
+  /** Repaint only the price-bearing summary bits (safe to call on every currency change — it
+   *  never touches the form, so in-progress user input is preserved). */
+  function repaintPrices() {
+    const selection = getCartSelection();
+    if (!selection) return;
+
+    const travelersEl = document.querySelector('[data-summary-travelers]');
+    if (travelersEl) {
+      travelersEl.innerHTML = selection.travelers
+        .map((t) => travelerRow(t.label, t.count, t.count * t.pricePerPerson, selection.currency))
+        .join('');
+    }
+
+    const totalEl = document.querySelector('[data-summary-total]');
+    if (totalEl) totalEl.textContent = formatMoney(selection.total, selection.currency);
+
+    const label = document.querySelector('[data-partial-label]');
+    if (label && selection.partialPayment?.type === 'amount' && selection.partialPayment.amount) {
+      label.textContent = `Pay a deposit now (${formatMoney(Number(selection.partialPayment.amount), selection.currency)})`;
+    }
+  }
+
+  async function initCheckout() {
+    const selection = getCartSelection();
+    const empty = document.querySelector('[data-checkout-empty]');
+    const content = document.querySelector('[data-checkout-content]');
+
+    if (!selection) {
+      empty?.classList.remove('hidden');
+      content?.classList.add('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    content?.classList.remove('hidden');
+
+    // --- summary ---
+    document.querySelector('[data-summary-trip-name]')!.textContent = selection.tripName;
+    document.querySelector('[data-summary-package-name]')!.textContent = selection.packageName;
+    const dateEl = document.querySelector('[data-summary-date]')!;
+    const d = selection.tripDate ? new Date(selection.tripDate) : null;
+    dateEl.textContent = d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'No date selected';
+
+    // --- payment mode ---
+    if (selection.partialPayment?.available) {
+      const section = document.querySelector('[data-payment-mode-section]');
+      section?.classList.remove('hidden');
+    }
+
+    // total, per-traveler prices, and deposit label (converted to display currency)
+    repaintPrices();
+
+    // --- countries ---
+    const countries = await getCountries();
+    const options = countries.map((c) => `<option value="${c.value}">${c.label}</option>`).join('');
+    document.querySelectorAll('[data-country-select]').forEach((sel) => {
+      sel.insertAdjacentHTML('beforeend', options);
+    });
+
+    // --- traveler detail fields, one block per counted traveler ---
+    const totalPax = selection.travelers.reduce((sum, t) => sum + t.count, 0);
+    const fieldsEl = document.querySelector('[data-travelers-fields]')!;
+    let travelerIndex = 0;
+    const blocks: string[] = [];
+    selection.travelers.forEach((cat) => {
+      for (let i = 0; i < cat.count; i++) {
+        const isLead = travelerIndex === 0;
+        blocks.push(`
+          <div class="border-t border-border-subtle pt-5 first:border-0 first:pt-0" data-traveler-block="${travelerIndex}">
+            <div class="mb-3 text-sm font-bold text-text-primary">${isLead ? 'Lead traveler' : `Traveler ${travelerIndex + 1}`} <span class="font-normal text-text-secondary">(${cat.label})</span></div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input name="traveler_${travelerIndex}_fname" required placeholder="First name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+              <input name="traveler_${travelerIndex}_lname" required placeholder="Last name" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+              <input name="traveler_${travelerIndex}_email" type="email" required placeholder="Email" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+              <input name="traveler_${travelerIndex}_phone" required placeholder="Phone" class="rounded-input border border-border-muted px-3.5 py-2.5 text-sm outline-none focus:border-safari-green" />
+              <select name="traveler_${travelerIndex}_country" required data-country-select class="sm:col-span-2 rounded-input border border-border-muted bg-white px-3.5 py-2.5 text-sm outline-none focus:border-safari-green">
+                <option value="">Country&hellip;</option>
+              </select>
+            </div>
+          </div>`);
+        travelerIndex++;
+      }
+    });
+    fieldsEl.innerHTML = blocks.join('');
+    // countries for the dynamically-added traveler selects
+    fieldsEl.querySelectorAll('[data-country-select]').forEach((sel) => {
+      sel.insertAdjacentHTML('beforeend', options);
+    });
+
+    // --- submit ---
+    const form = document.querySelector('[data-checkout-form]') as HTMLFormElement;
+    const submitBtn = document.querySelector('[data-checkout-submit]') as HTMLButtonElement;
+    const errorEl = document.querySelector('[data-checkout-error]')!;
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing…';
+
+      try {
+        const fd = new FormData(form);
+        const val = (name: string) => (fd.get(name) as string) ?? '';
+
+        const travellers: TravellerDetails[] = [];
+        for (let i = 0; i < totalPax; i++) {
+          travellers.push({
+            fname: val(`traveler_${i}_fname`),
+            lname: val(`traveler_${i}_lname`),
+            email: val(`traveler_${i}_email`),
+            phone: val(`traveler_${i}_phone`),
+            country: val(`traveler_${i}_country`),
+          });
+        }
+
+        const result = await submitCheckout({
+          tripId: selection.tripId,
+          packageId: selection.packageId,
+          travelers: travelersToPricingMap(selection.travelers),
+          tripDate: selection.tripDate,
+          billing: {
+            fname: val('billing_fname'),
+            lname: val('billing_lname'),
+            email: val('billing_email'),
+            phone: val('billing_phone'),
+            address: val('billing_address'),
+            city: val('billing_city'),
+            country: val('billing_country'),
+          },
+          travellers,
+          emergency: {
+            fname: val('emergency_fname'),
+            lname: val('emergency_lname'),
+            phone: val('emergency_phone'),
+            country: val('emergency_country'),
+            relation: val('emergency_relation'),
+          },
+          paymentMode: (val('paymentMode') as 'full_payment' | 'partial') || 'full_payment',
+        });
+
+        clearCartSelection();
+        window.location.href = result.authorizationUrl;
+      } catch (err) {
+        errorEl.textContent = err instanceof CheckoutError ? err.message : 'Something went wrong. Please try again.';
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Continue to payment';
+      }
+    });
+  }
+
+  initCheckout();
+  document.addEventListener('astro:after-swap', initCheckout);
+  window.addEventListener('sf-currency-changed', repaintPrices);
+</script>

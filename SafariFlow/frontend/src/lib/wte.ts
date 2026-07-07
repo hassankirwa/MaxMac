@@ -72,14 +72,19 @@ function mapTrip(t: any, dests: TermMap, acts: TermMap, i: number): PackageItem 
 
   return {
     slug: t.slug,
+    wpId: t.id,
     name: decode(t?.title?.rendered ?? t?.title ?? ''),
     region: destName,
     dest: destName,
     tag,
     days: Number(t?.duration?.period ?? 0) || 0,
     priceN: Math.round(Number(t.sf_from_price ?? 0)),
+    currency: (t.sf_currency as string) || 'USD',
     rating: Number(t.sf_rating ?? 0) || 4.8,
     gradient: GRADIENTS[destName] ?? FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length],
+    image: (t.sf_image as string) || '',
+    imageCard: (t.sf_image_card as string) || (t.sf_image as string) || '',
+    imageAlt: (t.sf_image_alt as string) || '',
     blurb: decode(t?.excerpt?.rendered ?? ''),
     exps,
     chips: chips.length ? chips : [tag],
@@ -90,6 +95,44 @@ function mapTrip(t: any, dests: TermMap, acts: TermMap, i: number): PackageItem 
     includes: Array.isArray(t.cost_includes) ? t.cost_includes.map(decode) : [],
     excludes: Array.isArray(t.cost_excludes) ? t.cost_excludes.map(decode) : [],
   };
+}
+
+export interface TravelerCategoryOption {
+  id: number;
+  label: string;
+  price: number;
+  salePrice: number | null;
+  hasSale: boolean;
+}
+
+export interface TripPackageOption {
+  id: number;
+  name: string;
+  isPrimary: boolean;
+  travelerCategories: TravelerCategoryOption[];
+}
+
+/** Fetch a trip's real packages + traveler-category pricing, for the live quote widget. Returns [] on failure. */
+export async function getTripPackages(tripId: number): Promise<TripPackageOption[]> {
+  try {
+    const raw = await fetchJSON(`/wp-json/wptravelengine/v2/trips/${tripId}/packages`);
+    if (!Array.isArray(raw)) return [];
+    return raw.map((p: any) => ({
+      id: p.id,
+      name: decode(p.name ?? ''),
+      isPrimary: Boolean(p.is_primary),
+      travelerCategories: (p.traveler_categories ?? []).map((c: any) => ({
+        id: c.id,
+        label: decode(c.label ?? ''),
+        price: Number(c.price ?? 0),
+        salePrice: c.sale_price ? Number(c.sale_price) : null,
+        hasSale: Boolean(c.has_sale),
+      })),
+    }));
+  } catch (e) {
+    console.warn('[wte] getTripPackages failed:', (e as Error).message);
+    return [];
+  }
 }
 
 /** Fetch and map all published trips. Returns [] on any failure so callers can fall back to static data. */
