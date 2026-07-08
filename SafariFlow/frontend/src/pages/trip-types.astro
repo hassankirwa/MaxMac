@@ -1,0 +1,78 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { getTripTypes, type TaxonomyTerm } from '../lib/wte';
+
+// Live from WordPress: the WTE "trip_types" taxonomy + real trip counts. Empty until terms are
+// created and assigned to trips in wp-admin (Trips → Trip Types) — the page shows an empty state.
+const tripTypes: TaxonomyTerm[] = await getTripTypes();
+
+const FALLBACK_GRADIENTS: [string, string][] = [
+  ['#c98a3c', '#7a4a1e'], ['#3fa9c9', '#1c6f86'], ['#5b7fa6', '#2c4a63'], ['#4a9d7a', '#256149'], ['#b98a52', '#5e3d1c'],
+];
+const cards = tripTypes.map((t, i) => ({ ...t, gradient: FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length] }));
+---
+
+<Layout title="Trip Types">
+  <Header variant="solid" />
+
+  <!-- hero banner -->
+  <div class="relative h-[280px] overflow-hidden sm:h-[320px] lg:h-[340px]" style="background:linear-gradient(150deg,#5b7fa6,#2c4a63);">
+    <div class="absolute inset-0 bg-gradient-to-b from-[rgba(13,26,18,0.5)] via-[rgba(13,26,18,0.3)] to-[rgba(13,26,18,0.6)]"></div>
+    <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(80% 120% at 88% 10%, rgba(212,160,23,0.25), transparent 55%);"></div>
+    <div class="container-page relative flex h-full flex-col justify-center">
+      <div class="flex items-center gap-2 text-[13px] font-medium text-white/75">
+        <a href="/" class="hover:text-white">Home</a> <span>/</span> <span class="text-savannah-gold">Trip Types</span>
+      </div>
+      <h1 class="mt-3 max-w-[640px] text-[32px] leading-[1.1] sm:text-4xl lg:text-[52px] lg:leading-[1.05] font-bold tracking-tight text-white">
+        Find the trip that fits you
+      </h1>
+      <p class="mt-2.5 max-w-[560px] text-[15px] sm:text-lg text-white/85">
+        Luxury, family, honeymoon, budget or group — browse safaris by the kind of journey you're planning.
+      </p>
+    </div>
+  </div>
+
+  <div class="container-page pt-10 pb-4">
+    {cards.length > 0 ? (
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        {cards.map((t) => (
+          <a
+            href={`/packages?trip_type=${encodeURIComponent(t.name)}`}
+            class="group block overflow-hidden rounded-card bg-white shadow-[0_18px_40px_-30px_rgba(31,50,40,0.4)] transition-shadow hover:shadow-[0_22px_48px_-24px_rgba(31,50,40,0.5)]"
+          >
+            <div class="relative h-[180px] sm:h-[200px]" style={`background:linear-gradient(150deg, ${t.gradient[0]}, ${t.gradient[1]});`}>
+              <div class="absolute inset-0" style="background:linear-gradient(0deg, rgba(13,26,18,.62), rgba(13,26,18,.05) 55%);"></div>
+              {t.count > 0 && (
+                <div class="absolute right-3.5 top-3.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-safari-green">{t.count} {t.count === 1 ? 'trip' : 'trips'}</div>
+              )}
+              <div class="absolute bottom-4 left-4 text-xl sm:text-2xl font-bold tracking-tight text-white">{t.name}</div>
+            </div>
+            <div class="p-4 sm:p-5">
+              <div class="flex items-center gap-1.5 text-sm font-bold text-safari-green">
+                Browse {t.name.toLowerCase()} trips
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="mx-auto max-w-lg rounded-card bg-white p-10 text-center shadow-[0_14px_36px_-30px_rgba(31,50,40,0.5)]">
+        <div class="text-lg font-semibold text-text-primary">Trip types are coming soon</div>
+        <p class="mt-2 text-sm text-text-secondary">We're still organising our safaris by type. In the meantime, browse the full collection.</p>
+        <a href="/packages" class="mt-6 inline-block rounded-btn bg-safari-green px-6 py-3 text-sm font-bold text-white">Browse all packages</a>
+      </div>
+    )}
+  </div>
+
+  <CtaBand
+    heading="Tell us the kind of trip you're after."
+    text="Whatever the occasion, we'll tailor a safari to match — just share your plans."
+    buttons={[{ label: 'Talk to an expert', href: '/contact', variant: 'gold' }]}
+  />
+
+  <Footer />
+</Layout>

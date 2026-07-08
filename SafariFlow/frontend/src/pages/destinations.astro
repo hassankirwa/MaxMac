@@ -3,23 +3,32 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CtaBand from '../components/CtaBand.astro';
+import { getDestinations, type TaxonomyTerm } from '../lib/wte';
+import { destOptions } from '../data/packages';
 
-const destinations = [
-  { name: 'Serengeti', country: 'Tanzania', region: 'Tanzania', packageDest: 'Tanzania', trips: 14, gradient: ['#c98a3c', '#7a4a1e'], blurb: 'Endless plains and the Great Migration — the safari every traveller dreams of.', tags: ['Migration', 'Big Five'] },
-  { name: 'Ngorongoro', country: 'Tanzania', region: 'Tanzania', packageDest: 'Tanzania', trips: 8, gradient: ['#b98a52', '#5e3d1c'], blurb: "A collapsed volcanic caldera cradling one of Africa's densest wildlife populations.", tags: ['Crater', 'Big Five'] },
-  { name: 'Kilimanjaro', country: 'Tanzania', region: 'Tanzania', packageDest: 'Tanzania', trips: 6, gradient: ['#5b7fa6', '#2c4a63'], blurb: 'The roof of Africa — snow-capped summit treks and dramatic foothill views.', tags: ['Trekking', 'Summit'] },
-  { name: 'Masai Mara', country: 'Kenya', region: 'Kenya', packageDest: 'Kenya', trips: 11, gradient: ['#c98a3c', '#6e4a22'], blurb: "Rolling grasslands famed for big cats and the migration's northern chapter.", tags: ['Big Cats', 'Migration'] },
-  { name: 'Amboseli', country: 'Kenya', region: 'Kenya', packageDest: 'Kenya', trips: 7, gradient: ['#a3894f', '#5e4a22'], blurb: 'Great elephant herds framed by the snows of Kilimanjaro across the border.', tags: ['Elephants', 'Family'] },
-  { name: 'Lake Nakuru', country: 'Kenya', region: 'Kenya', packageDest: 'Kenya', trips: 5, gradient: ['#7a9a5b', '#3d5a2c'], blurb: 'Flamingo-fringed soda lake and a stronghold for endangered rhino.', tags: ['Birding', 'Rhino'] },
-  { name: 'Diani Beach', country: 'Kenya', region: 'Coast', packageDest: 'Kenyan Coast', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], blurb: 'Powder-white sand, a vibrant reef and the perfect post-safari unwind.', tags: ['Beach', 'Reef'] },
-  { name: 'Zanzibar', country: 'Tanzania', region: 'Coast', packageDest: 'Zanzibar', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], blurb: 'Spice-island history in Stone Town and turquoise Indian Ocean shallows.', tags: ['Island', 'Culture'] },
-  { name: 'Lamu', country: 'Kenya', region: 'Coast', packageDest: 'Kenyan Coast', trips: 4, gradient: ['#4a9d7a', '#256149'], blurb: 'A living Swahili town of coral-stone lanes, dhows and slow, timeless days.', tags: ['Heritage', 'Dhows'] },
-  { name: 'Malindi & Watamu', country: 'Kenya', region: 'Coast', packageDest: 'Kenyan Coast', trips: 6, gradient: ['#2f97b6', '#186078'], blurb: 'Marine parks, snorkelling and a laid-back Italian-Swahili coastal blend.', tags: ['Snorkel', 'Marine park'] },
+// Live from WordPress: the WTE "destination" taxonomy + real trip counts. Falls back to the
+// static destOptions list (counts hidden) if WP is unreachable, so the page always renders.
+const live = await getDestinations();
+const destinations: TaxonomyTerm[] = live.length
+  ? live
+  : destOptions.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), count: 0, parent: 0 }));
+
+// Curated presentation (imagery/copy/country) keyed by destination name, merged onto live data.
+// Unknown destinations rotate through a neutral fallback so newly-added WTE terms still render.
+type Presentation = { gradient: [string, string]; blurb: string; country: string };
+const PRESENTATION: Record<string, Presentation> = {
+  Tanzania: { gradient: ['#c98a3c', '#7a4a1e'], blurb: 'The classic circuit — Serengeti plains, Ngorongoro Crater and the Great Migration.', country: 'Tanzania' },
+  Kenya: { gradient: ['#c98a3c', '#6e4a22'], blurb: 'Big-cat country — the Masai Mara, elephant herds of Amboseli and Rift Valley lakes.', country: 'Kenya' },
+  'Kenyan Coast': { gradient: ['#3fa9c9', '#1c6f86'], blurb: 'Powder-white sand, coral reefs and Swahili towns from Diani to Lamu.', country: 'Kenya' },
+  Zanzibar: { gradient: ['#4a9d7a', '#256149'], blurb: 'Spice-island history in Stone Town and turquoise Indian Ocean shallows.', country: 'Tanzania' },
+};
+const FALLBACK_GRADIENTS: [string, string][] = [
+  ['#c98a3c', '#7a4a1e'], ['#3fa9c9', '#1c6f86'], ['#5b7fa6', '#2c4a63'], ['#4a9d7a', '#256149'],
 ];
+const presFor = (name: string, i: number): Presentation =>
+  PRESENTATION[name] ?? { gradient: FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length], blurb: 'Explore handcrafted safaris across this region.', country: 'East Africa' };
 
-const regions = ['All', 'Tanzania', 'Kenya', 'Coast'];
-const labelFor: Record<string, string> = { All: 'All', Tanzania: 'Tanzania', Kenya: 'Kenya safari', Coast: 'Kenyan & Zanzibar coast' };
-const groupTitles: Record<string, string> = { Tanzania: 'Tanzania — the classic circuit', Kenya: 'Kenya — big-cat country', Coast: 'The Swahili coast & islands' };
+const cards = destinations.map((d, i) => ({ ...d, ...presFor(d.name, i) }));
 ---
 
 <Layout title="Destinations">
@@ -42,13 +51,38 @@ const groupTitles: Record<string, string> = { Tanzania: 'Tanzania — the classi
     </div>
   </div>
 
-  <!-- region tabs -->
-  <div class="container-page pt-7">
-    <div class="scroll-x-touch flex gap-2.5 overflow-x-auto pb-1" data-region-tabs></div>
+  <!-- destination grid -->
+  <div class="container-page pt-10 pb-4">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+      {cards.map((d) => (
+        <a
+          href={`/packages?dest=${encodeURIComponent(d.name)}`}
+          class="group block overflow-hidden rounded-card bg-white shadow-[0_18px_40px_-30px_rgba(31,50,40,0.4)] transition-shadow hover:shadow-[0_22px_48px_-24px_rgba(31,50,40,0.5)]"
+        >
+          <div class="relative h-[200px] sm:h-[220px]" style={`background:linear-gradient(150deg, ${d.gradient[0]}, ${d.gradient[1]});`}>
+            <div class="absolute inset-0" style="background:linear-gradient(0deg, rgba(13,26,18,.62), rgba(13,26,18,.05) 55%);"></div>
+            {d.count > 0 && (
+              <div class="absolute right-3.5 top-3.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-safari-green">{d.count} {d.count === 1 ? 'trip' : 'trips'}</div>
+            )}
+            <div class="absolute bottom-4 left-4 text-white">
+              <div class="text-xl sm:text-2xl font-bold tracking-tight">{d.name}</div>
+              <div class="mt-1 flex items-center gap-1.5 text-[13px] text-white/82">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {d.country}
+              </div>
+            </div>
+          </div>
+          <div class="p-4 sm:p-5">
+            <p class="min-h-[44px] text-sm leading-relaxed text-text-secondary">{d.blurb}</p>
+            <div class="mt-3 flex items-center gap-1.5 text-sm font-bold text-safari-green">
+              Explore {d.name}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
   </div>
-
-  <!-- destination groups -->
-  <div class="container-page pt-6 pb-4" data-groups></div>
 
   <CtaBand
     heading="Not sure where to start? We'll help you choose."
@@ -58,76 +92,3 @@ const groupTitles: Record<string, string> = { Tanzania: 'Tanzania — the classi
 
   <Footer />
 </Layout>
-
-<script define:vars={{ destinations, regions, labelFor, groupTitles }}>
-  const state = { region: 'All' };
-
-  function tabHtml(r, active) {
-    return `<div data-region-tab="${r}" class="cursor-pointer whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
-      active ? 'bg-safari-green text-white' : 'border border-border-muted bg-white text-[#555]'
-    }">${labelFor[r]}</div>`;
-  }
-
-  function cardHtml(d) {
-    return `
-      <div class="overflow-hidden rounded-card bg-white shadow-[0_18px_40px_-30px_rgba(31,50,40,0.4)]">
-        <div class="relative h-[200px] sm:h-[220px]" style="background:linear-gradient(150deg, ${d.gradient[0]}, ${d.gradient[1]});">
-          <div class="absolute inset-0 bg-gradient-to-t from-[rgba(13,26,18,0.62)] to-transparent" style="background:linear-gradient(0deg, rgba(13,26,18,.62), rgba(13,26,18,.05) 55%);"></div>
-          <div class="absolute right-3.5 top-3.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-safari-green">${d.trips} trips</div>
-          <div class="absolute bottom-4 left-4 text-white">
-            <div class="text-xl sm:text-2xl font-bold tracking-tight">${d.name}</div>
-            <div class="mt-1 flex items-center gap-1.5 text-[13px] text-white/82">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              ${d.country}
-            </div>
-          </div>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="min-h-[44px] text-sm leading-relaxed text-text-secondary">${d.blurb}</p>
-          <div class="mt-1 mb-4 flex flex-wrap gap-1.5">
-            ${d.tags.map((t) => `<span class="rounded-md bg-[#F3F6F2] px-2.5 py-1 text-[11px] font-semibold text-safari-green">${t}</span>`).join('')}
-          </div>
-          <a href="/packages?dest=${encodeURIComponent(d.packageDest)}" class="flex items-center gap-1.5 text-sm font-bold text-safari-green">
-            Explore ${d.name}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
-      </div>`;
-  }
-
-  function render() {
-    const tabsEl = document.querySelector('[data-region-tabs]');
-    if (tabsEl) {
-      tabsEl.innerHTML = regions.map((r) => tabHtml(r, state.region === r)).join('');
-      tabsEl.querySelectorAll('[data-region-tab]').forEach((el) => {
-        el.addEventListener('click', () => {
-          state.region = el.getAttribute('data-region-tab');
-          render();
-        });
-      });
-    }
-
-    const groupKeys = state.region === 'All' ? ['Tanzania', 'Kenya', 'Coast'] : [state.region];
-    const groupsEl = document.querySelector('[data-groups]');
-    if (groupsEl) {
-      groupsEl.innerHTML = groupKeys
-        .map((key) => {
-          const items = destinations.filter((d) => d.region === key);
-          return `
-            <div class="mb-12">
-              <div class="mb-5 flex items-center gap-3">
-                <div class="text-xl sm:text-[22px] font-bold tracking-tight text-text-primary">${groupTitles[key]}</div>
-                <div class="h-px flex-1 bg-border-muted"></div>
-                <div class="hidden text-sm text-text-secondary/80 sm:block">${items.length} destinations</div>
-              </div>
-              <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                ${items.map(cardHtml).join('')}
-              </div>
-            </div>`;
-        })
-        .join('');
-    }
-  }
-
-  render();
-</script>

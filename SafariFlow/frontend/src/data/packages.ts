@@ -19,6 +19,8 @@ export interface PackageItem {
   imageAlt?: string;
   blurb: string;
   exps: string[];
+  /** WTE trip_types term names (only present on live WP data). Used by the /packages?trip_type= filter. */
+  tripTypes?: string[];
   chips: string[];
   highlights: string[];
   itinerary: { title: string; desc: string }[];

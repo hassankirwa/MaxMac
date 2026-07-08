@@ -1,6 +1,15 @@
 ---
-const exploreLinks = ['Safari packages', 'Destinations', 'Experiences', 'Gallery'];
-const companyLinks = ['About us', 'Reviews', 'Blog', 'Contact'];
+// Only real, existing pages are linked — no dead placeholders.
+const exploreLinks = [
+  { label: 'Safari packages', href: '/packages' },
+  { label: 'Destinations', href: '/destinations' },
+  { label: 'Experiences', href: '/experiences' },
+  { label: 'Trip Types', href: '/trip-types' },
+];
+const companyLinks = [
+  { label: 'About us', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+];
 ---
 
 <footer class="bg-ink px-5 pt-16 pb-10 lg:px-14 lg:pt-16">
@@ -21,30 +30,40 @@ const companyLinks = ['About us', 'Reviews', 'Blog', 'Contact'];
       <div>
         <div class="mb-3.5 text-sm font-bold text-white">Explore</div>
         <div class="flex flex-col gap-2.5 text-sm text-white/60">
-          {exploreLinks.map((label) => <span>{label}</span>)}
+          {exploreLinks.map((link) => (
+            <a href={link.href} class="transition-colors hover:text-white">{link.label}</a>
+          ))}
         </div>
       </div>
 
       <div>
         <div class="mb-3.5 text-sm font-bold text-white">Company</div>
         <div class="flex flex-col gap-2.5 text-sm text-white/60">
-          {companyLinks.map((label) => <span>{label}</span>)}
+          {companyLinks.map((link) => (
+            <a href={link.href} class="transition-colors hover:text-white">{link.label}</a>
+          ))}
         </div>
       </div>
 
       <div>
         <div class="mb-3.5 text-sm font-bold text-white">Get in touch</div>
         <div class="flex flex-col gap-2.5 text-sm text-white/60">
-          <span>+254 712 000 000</span>
-          <span>hello@maxmacsafaris.com</span>
+          <a href="tel:+254712000000" class="transition-colors hover:text-white">+254 712 000 000</a>
+          <a href="mailto:hello@maxmacsafaris.com" class="transition-colors hover:text-white">hello@maxmacsafaris.com</a>
           <span>Nairobi &middot; Arusha</span>
         </div>
       </div>
     </div>
 
-    <div class="mt-10 flex flex-col gap-3 border-t border-white/10 pt-[22px] text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-      <span>&copy; 2026 MaxMac Safaris. All rights reserved.</span>
-      <span>Privacy &middot; Terms &middot; Cookies</span>
+    <div class="mt-10 border-t border-white/10 pt-[22px]">
+      <div class="flex flex-col gap-3 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+        <span>&copy; 2026 MaxMac Safaris. All rights reserved.</span>
+        <span>Privacy &middot; Terms &middot; Cookies</span>
+      </div>
+      <div class="mt-4 text-center text-xs text-white/40">
+        Proudly developed by
+        <a href="https://dotcreative.co.ke" target="_blank" rel="noopener noreferrer" class="font-semibold text-white/70 transition-colors hover:text-savannah-gold">Dotcreative Limited</a>
+      </div>
     </div>
   </div>
 </footer>

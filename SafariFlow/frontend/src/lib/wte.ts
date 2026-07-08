@@ -61,11 +61,14 @@ async function termMap(taxonomy: string): Promise<TermMap> {
   return map;
 }
 
-function mapTrip(t: any, dests: TermMap, acts: TermMap, i: number): PackageItem {
+function mapTrip(t: any, dests: TermMap, acts: TermMap, types: TermMap, i: number): PackageItem {
   const destName =
     (t.destination ?? []).map((id: number) => dests[id]).filter(Boolean)[0] ?? 'East Africa';
   const exps = (t.activities ?? [])
     .map((id: number) => normExp(acts[id] ?? ''))
+    .filter(Boolean);
+  const tripTypes = (t.trip_types ?? [])
+    .map((id: number) => types[id] ?? '')
     .filter(Boolean);
   const chips = [...new Set<string>(exps)].slice(0, 3);
   const tag = decode(t.sf_tag || exps[0] || 'Popular');
@@ -87,6 +90,7 @@ function mapTrip(t: any, dests: TermMap, acts: TermMap, i: number): PackageItem 
     imageAlt: (t.sf_image_alt as string) || '',
     blurb: decode(t?.excerpt?.rendered ?? ''),
     exps,
+    tripTypes,
     chips: chips.length ? chips : [tag],
     highlights: Array.isArray(t.highlights) ? t.highlights.map(decode) : [],
     itinerary: Array.isArray(t.itineraries)
@@ -135,16 +139,91 @@ export async function getTripPackages(tripId: number): Promise<TripPackageOption
   }
 }
 
+export interface TaxonomyTerm {
+  name: string;
+  slug: string;
+  /** Number of published trips tagged with this term. */
+  count: number;
+  /** Parent term ID (0 = top-level). Lets a landing page group children under parents. */
+  parent: number;
+}
+
+/** Backwards-compatible alias — the experiences page imports this shape. */
+export type Experience = TaxonomyTerm;
+
+/**
+ * Fetch a WTE taxonomy's terms (with live trip counts) for a landing page. `normalize` lets the
+ * activities taxonomy match the frontend's expOptions casing. Returns [] on failure so callers
+ * can fall back to static data.
+ */
+async function fetchTaxonomyTerms(
+  taxonomy: string,
+  normalize?: (s: string) => string
+): Promise<TaxonomyTerm[]> {
+  const terms = await fetchJSON(`/wp-json/wp/v2/${taxonomy}?per_page=100&_fields=id,name,slug,count,parent`);
+  if (!Array.isArray(terms)) return [];
+  return terms
+    .map((t: any) => {
+      const raw = decode(t.name ?? '');
+      return {
+        name: normalize ? normalize(raw) : raw,
+        slug: String(t.slug ?? ''),
+        count: Number(t.count ?? 0),
+        parent: Number(t.parent ?? 0),
+      };
+    })
+    .filter((x: TaxonomyTerm) => x.name);
+}
+
+const byCountThenName = (a: TaxonomyTerm, b: TaxonomyTerm) =>
+  b.count - a.count || a.name.localeCompare(b.name);
+
+/**
+ * WTE "activities" taxonomy — surfaced as "experiences". Names normalized to expOptions casing so
+ * /packages?exp= filtering lines up. Only terms with at least one trip are returned.
+ */
+export async function getExperiences(): Promise<Experience[]> {
+  try {
+    return (await fetchTaxonomyTerms('activities', normExp))
+      .filter((e) => e.count > 0)
+      .sort(byCountThenName);
+  } catch (e) {
+    console.warn('[wte] getExperiences failed, using static fallback:', (e as Error).message);
+    return [];
+  }
+}
+
+/** WTE "destination" taxonomy. Returns all regions (even 0-trip ones — they're intended categories). */
+export async function getDestinations(): Promise<TaxonomyTerm[]> {
+  try {
+    return (await fetchTaxonomyTerms('destination')).sort(byCountThenName);
+  } catch (e) {
+    console.warn('[wte] getDestinations failed, using static fallback:', (e as Error).message);
+    return [];
+  }
+}
+
+/** WTE "trip_types" taxonomy. Empty until terms are created + assigned to trips in wp-admin. */
+export async function getTripTypes(): Promise<TaxonomyTerm[]> {
+  try {
+    return (await fetchTaxonomyTerms('trip_types')).sort(byCountThenName);
+  } catch (e) {
+    console.warn('[wte] getTripTypes failed:', (e as Error).message);
+    return [];
+  }
+}
+
 /** Fetch and map all published trips. Returns [] on any failure so callers can fall back to static data. */
 export async function getTrips(): Promise<PackageItem[]> {
   try {
-    const [trips, dests, acts] = await Promise.all([
+    const [trips, dests, acts, types] = await Promise.all([
       fetchJSON('/wp-json/wptravelengine/v2/trips?per_page=100'),
       termMap('destination'),
       termMap('activities'),
+      termMap('trip_types'),
     ]);
     if (!Array.isArray(trips)) return [];
-    return trips.map((t, i) => mapTrip(t, dests, acts, i));
+    return trips.map((t, i) => mapTrip(t, dests, acts, types, i));
   } catch (e) {
     console.warn('[wte] getTrips failed, using static fallback:', (e as Error).message);
     return [];

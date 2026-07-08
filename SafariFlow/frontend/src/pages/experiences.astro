@@ -1,0 +1,120 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { getExperiences, type Experience } from '../lib/wte';
+import { expOptions } from '../data/packages';
+
+// Live from WordPress: the WTE "activities" taxonomy + real trip counts. Falls back to the
+// static expOptions list (counts hidden) if WP is unreachable, so the page always renders.
+const live = await getExperiences();
+const experiences: Experience[] = live.length
+  ? live
+  : expOptions.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), count: 0 }));
+
+// Curated presentation (imagery/copy/icon) keyed by the normalized experience name, merged
+// onto the live data. Unknown experiences rotate through a neutral fallback.
+type Presentation = { gradient: [string, string]; blurb: string; icon: string };
+const PRESENTATION: Record<string, Presentation> = {
+  'Wildlife safari': {
+    gradient: ['#c98a3c', '#7a4a1e'],
+    blurb: 'Big Five game drives across the Serengeti, Mara and beyond — the safari at its purest.',
+    icon: 'M4 17h16M6 17c0-4 2-7 6-7s6 3 6 7M9 10V7a3 3 0 0 1 6 0v3',
+  },
+  'Beach & coast': {
+    gradient: ['#3fa9c9', '#1c6f86'],
+    blurb: 'Powder-white sand, turquoise reefs and slow island days on the Swahili coast.',
+    icon: 'M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0M12 12V4M12 4c3 0 5 2 5 5M12 4c-3 0-5 2-5 5',
+  },
+  Trekking: {
+    gradient: ['#5b7fa6', '#2c4a63'],
+    blurb: 'Summit Kilimanjaro and walk the highlands — dramatic climbs and roof-of-Africa views.',
+    icon: 'm3 20 6-12 4 7 3-5 5 10z',
+  },
+  Cultural: {
+    gradient: ['#b98a52', '#5e3d1c'],
+    blurb: 'Maasai villages, Stone Town lanes and living Swahili heritage up close.',
+    icon: 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6',
+  },
+  Honeymoon: {
+    gradient: ['#4a9d7a', '#256149'],
+    blurb: 'Private lodges, sundowners and secluded escapes made for two.',
+    icon: 'M12 21s-7-4.5-9-9a5 5 0 0 1 9-2 5 5 0 0 1 9 2c-2 4.5-9 9-9 9z',
+  },
+  Family: {
+    gradient: ['#7a9a5b', '#3d5a2c'],
+    blurb: 'Gentle itineraries, big encounters and safaris the whole family will remember.',
+    icon: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 11a2.5 2.5 0 1 0 0-5M21 20c0-2.5-2-4-4-4',
+  },
+};
+const FALLBACK_PRES: Presentation[] = [
+  { gradient: ['#c98a3c', '#7a4a1e'], blurb: 'Handcrafted journeys built around what you love most.', icon: 'M12 2 15 9l7 .5-5.5 4.5L18 21l-6-3.8L6 21l1.5-7L2 9.5 9 9z' },
+  { gradient: ['#3fa9c9', '#1c6f86'], blurb: 'Handcrafted journeys built around what you love most.', icon: 'M12 2 15 9l7 .5-5.5 4.5L18 21l-6-3.8L6 21l1.5-7L2 9.5 9 9z' },
+];
+const presFor = (name: string, i: number): Presentation =>
+  PRESENTATION[name] ?? FALLBACK_PRES[i % FALLBACK_PRES.length];
+
+const cards = experiences.map((e, i) => ({ ...e, ...presFor(e.name, i) }));
+---
+
+<Layout title="Experiences">
+  <Header variant="solid" />
+
+  <!-- hero banner -->
+  <div class="relative h-[280px] overflow-hidden sm:h-[320px] lg:h-[340px]" style="background:linear-gradient(150deg,#1F5E3B,#0f3a24);">
+    <div class="absolute inset-0 bg-gradient-to-b from-[rgba(13,26,18,0.5)] via-[rgba(13,26,18,0.3)] to-[rgba(13,26,18,0.6)]"></div>
+    <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(80% 120% at 88% 10%, rgba(212,160,23,0.25), transparent 55%);"></div>
+    <div class="container-page relative flex h-full flex-col justify-center">
+      <div class="flex items-center gap-2 text-[13px] font-medium text-white/75">
+        <a href="/" class="hover:text-white">Home</a> <span>/</span> <span class="text-savannah-gold">Experiences</span>
+      </div>
+      <h1 class="mt-3 max-w-[640px] text-[32px] leading-[1.1] sm:text-4xl lg:text-[52px] lg:leading-[1.05] font-bold tracking-tight text-white">
+        What kind of journey are you after?
+      </h1>
+      <p class="mt-2.5 max-w-[560px] text-[15px] sm:text-lg text-white/85">
+        From dawn game drives to coral reefs and mountain summits — choose the experience and we'll match the trip.
+      </p>
+    </div>
+  </div>
+
+  <!-- experience grid -->
+  <div class="container-page pt-10 pb-4">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+      {cards.map((c) => (
+        <a
+          href={`/packages?exp=${encodeURIComponent(c.name)}`}
+          class="group block overflow-hidden rounded-card bg-white shadow-[0_18px_40px_-30px_rgba(31,50,40,0.4)] transition-shadow hover:shadow-[0_22px_48px_-24px_rgba(31,50,40,0.5)]"
+        >
+          <div class="relative h-[190px] sm:h-[210px]" style={`background:linear-gradient(150deg, ${c.gradient[0]}, ${c.gradient[1]});`}>
+            <div class="absolute inset-0" style="background:linear-gradient(0deg, rgba(13,26,18,.62), rgba(13,26,18,.05) 55%);"></div>
+            {c.count > 0 && (
+              <div class="absolute right-3.5 top-3.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-safari-green">{c.count} {c.count === 1 ? 'trip' : 'trips'}</div>
+            )}
+            <div class="absolute bottom-4 left-4 flex items-center gap-2.5 text-white">
+              <span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white/15 backdrop-blur-sm">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d={c.icon} /></svg>
+              </span>
+              <div class="text-xl sm:text-2xl font-bold tracking-tight">{c.name}</div>
+            </div>
+          </div>
+          <div class="p-4 sm:p-5">
+            <p class="min-h-[44px] text-sm leading-relaxed text-text-secondary">{c.blurb}</p>
+            <div class="mt-3 flex items-center gap-1.5 text-sm font-bold text-safari-green">
+              Browse {c.name.toLowerCase()} trips
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <CtaBand
+    heading="Can't decide? Tell us what you love."
+    text="Share your interests and dates — we'll craft an itinerary around the experiences that matter to you."
+    buttons={[{ label: 'Talk to an expert', href: '/contact', variant: 'gold' }]}
+  />
+
+  <Footer />
+</Layout>

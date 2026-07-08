@@ -151,12 +151,13 @@ destOptions.forEach((d) => (destCounts[d] = allPackages.filter((p) => p.dest ===
     }
   };
 
-  const state = { dest: [], exp: [], maxBudget: catalogMaxPrice, dur: 'Any', sort: 0, sheetOpen: false };
+  const state = { dest: [], exp: [], tripType: '', maxBudget: catalogMaxPrice, dur: 'Any', sort: 0, sheetOpen: false };
 
   // seed filters from ?exp=&dest=&checkin=&adults= when arriving from the homepage search
   const urlParams = new URLSearchParams(window.location.search);
   const urlExp = urlParams.get('exp');
   const urlDest = urlParams.get('dest');
+  const urlTripType = urlParams.get('trip_type');
   const urlCheckin = urlParams.get('checkin');
   const urlCheckout = urlParams.get('checkout');
   const urlAdults = urlParams.get('adults');
@@ -164,6 +165,8 @@ destOptions.forEach((d) => (destCounts[d] = allPackages.filter((p) => p.dest ===
   const urlInfants = urlParams.get('infants');
   if (urlExp && expOptions.includes(urlExp)) state.exp.push(urlExp);
   if (urlDest && destOptions.includes(urlDest)) state.dest.push(urlDest);
+  // trip_type has no static option list (terms are WP-defined), so accept whatever WP linked to.
+  if (urlTripType) state.tripType = urlTripType;
 
   // Forward the party + preferred date onto each trip link so the booking widget on the
   // trip page pre-seeds its WTE traveler-category steppers from the homepage search.
@@ -181,6 +184,7 @@ destOptions.forEach((d) => (destCounts[d] = allPackages.filter((p) => p.dest ===
     const parts = [];
     if (urlDest) parts.push(urlDest);
     if (urlExp) parts.push(urlExp);
+    if (urlTripType) parts.push(urlTripType);
     const fmt = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     if (urlCheckin && urlCheckout) parts.push(`${fmt(urlCheckin)} – ${fmt(urlCheckout)}`);
     else if (urlCheckin) parts.push(`from ${fmt(urlCheckin)}`);
@@ -270,6 +274,7 @@ destOptions.forEach((d) => (destCounts[d] = allPackages.filter((p) => p.dest ===
       (p) =>
         (state.dest.length === 0 || state.dest.includes(p.dest)) &&
         (state.exp.length === 0 || p.exps.some((e) => state.exp.includes(e))) &&
+        (state.tripType === '' || (p.tripTypes || []).includes(state.tripType)) &&
         p.priceN <= state.maxBudget &&
         inDuration(p.days)
     );
@@ -403,6 +408,7 @@ destOptions.forEach((d) => (destCounts[d] = allPackages.filter((p) => p.dest ===
     btn.addEventListener('click', () => {
       state.dest = [];
       state.exp = [];
+      state.tripType = '';
       state.maxBudget = catalogMaxPrice;
       state.dur = 'Any';
       document.querySelectorAll('[data-budget-input]').forEach((input) => (input.value = String(catalogMaxPrice)));
