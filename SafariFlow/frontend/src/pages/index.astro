@@ -7,7 +7,7 @@ import FaqAccordion from '../components/FaqAccordion.astro';
 import Testimonials from '../components/Testimonials.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { packages as staticPackages, destOptions } from '../data/packages';
-import { getTrips } from '../lib/wte';
+import { getTrips, getDestinations } from '../lib/wte';
 import { formatMoney } from '../lib/money';
 
 // Headless: featured trips come from WordPress, falling back to bundled data.
@@ -45,19 +45,44 @@ const featured = [...picked, ...topUp]
     imageAlt: p.imageAlt || '',
   }));
 
-const mobileDestinations = [
-  { name: 'Serengeti', trips: 14, gradient: ['#c98a3c', '#7a4a1e'], dest: 'Tanzania' },
-  { name: 'Zanzibar', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], dest: 'Zanzibar' },
-  { name: 'Kilimanjaro', trips: 6, gradient: ['#5b7fa6', '#2c4a63'], dest: 'Tanzania' },
-  { name: 'Diani Beach', trips: 8, gradient: ['#4a9d7a', '#256149'], dest: 'Kenyan Coast' },
+// Destinations showcase — live from WP (destination taxonomy + trip counts). Falls back to the
+// previous hand-picked tiles if WP is unreachable at build time.
+const liveDestinations = await getDestinations();
+
+const DEST_GRADIENTS: Record<string, [string, string]> = {
+  Tanzania: ['#c98a3c', '#7a4a1e'],
+  Kenya: ['#c98a3c', '#6e4a22'],
+  'Kenyan Coast': ['#3fa9c9', '#1c6f86'],
+  Zanzibar: ['#4a9d7a', '#256149'],
+};
+const DEST_FALLBACK_GRADIENTS: [string, string][] = [
+  ['#c98a3c', '#7a4a1e'], ['#3fa9c9', '#1c6f86'], ['#5b7fa6', '#2c4a63'], ['#4a9d7a', '#256149'],
+];
+// Desktop bento slots: first tile tall-left, last tile wide-bottom.
+const BENTO_SLOTS = [
+  { size: '28px', span: 'grid-row: span 2;' },
+  { size: '22px', span: '' },
+  { size: '22px', span: '' },
+  { size: '22px', span: 'grid-column: span 2;' },
+];
+const staticDestTiles = [
+  { name: 'Serengeti', dest: 'Tanzania', trips: 14 },
+  { name: 'Zanzibar', dest: 'Zanzibar', trips: 9 },
+  { name: 'Kilimanjaro', dest: 'Tanzania', trips: 6 },
+  { name: 'Kenya Coast', dest: 'Kenyan Coast', trips: 11 },
 ];
 
-const desktopDestinations = [
-  { name: 'Serengeti', trips: 14, gradient: ['#c98a3c', '#7a4a1e'], dest: 'Tanzania', size: '28px', span: 'grid-row: span 2;' },
-  { name: 'Zanzibar', trips: 9, gradient: ['#3fa9c9', '#1c6f86'], dest: 'Zanzibar', size: '22px', span: '' },
-  { name: 'Kilimanjaro', trips: 6, gradient: ['#5b7fa6', '#2c4a63'], dest: 'Tanzania', size: '22px', span: '' },
-  { name: 'Kenya Coast', trips: 11, gradient: ['#4a9d7a', '#256149'], dest: 'Kenyan Coast', size: '22px', span: 'grid-column: span 2;' },
-];
+const destBase = (liveDestinations.length
+  ? liveDestinations.slice(0, 4).map((d) => ({ name: d.name, dest: d.name, trips: d.count }))
+  : staticDestTiles
+).map((d, i) => ({
+  ...d,
+  gradient: DEST_GRADIENTS[d.name] ?? DEST_FALLBACK_GRADIENTS[i % DEST_FALLBACK_GRADIENTS.length],
+  tripsLabel: d.trips > 0 ? `${d.trips} ${d.trips === 1 ? 'trip' : 'trips'}` : 'Explore',
+}));
+
+const mobileDestinations = destBase;
+const desktopDestinations = destBase.map((d, i) => ({ ...d, ...BENTO_SLOTS[i % BENTO_SLOTS.length] }));
 
 const values = [
   {
@@ -305,7 +330,7 @@ const faqs = [
             <div class="absolute inset-0 bg-gradient-to-t from-[rgba(15,28,20,0.6)] to-transparent"></div>
             <div class="absolute bottom-3 left-3.5 text-white">
               <div class="text-base font-bold">{d.name}</div>
-              <div class="text-[11px] text-white/80">{d.trips} trips</div>
+              <div class="text-[11px] text-white/80">{d.tripsLabel}</div>
             </div>
           </a>
         ))}
@@ -322,7 +347,7 @@ const faqs = [
             <div class="absolute inset-0 bg-gradient-to-t from-[rgba(15,28,20,0.65)] via-[rgba(15,28,20,0.05)] to-transparent"></div>
             <div class="absolute bottom-5 left-5 text-white">
               <div class:list={['font-bold tracking-tight', d.size === '28px' ? 'text-[28px]' : 'text-[22px]']}>{d.name}</div>
-              <div class="mt-1 text-sm text-white/82">{d.trips} trips</div>
+              <div class="mt-1 text-sm text-white/82">{d.tripsLabel}</div>
             </div>
           </a>
         ))}
